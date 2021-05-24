@@ -35,7 +35,7 @@ from random     import seed
 from sharedDefs import getMountedOn, ECO_SEED
 from sharedDefs import setupEssayConfig, getEssayParameter, setEssayParameter, overrideEssayParameter
 from sharedDefs import serialise, saveAsText, stimestamp, tsprint, saveLog
-from sharedDefs import loadSourceData, createBoL
+from sharedDefs import loadSourceData, createBoL, bol2content
 
 def main(configFile):
 
@@ -95,24 +95,26 @@ def main(configFile):
 
   # loads the dataset
   tsprint('Loading raw data')
-  sourceData = loadSourceData(param_sourcepath, param_rawdata, param_territory, param_popsizes)
+  sourceData = loadSourceData(param_sourcepath, param_rawdata, param_territory, param_popsizes) #xxx moving average?
   tsprint('-- {0} records have been loaded.'.format(len(sourceData)))
   print(sourceData[0])
   print(sourceData[-1])
 
-  #xxx window average?
-
-  # creates the "book of life"
+  # creates the "book of life" #xxx bol is not a good name
   print()
   tsprint('Creating the Book of Life')
   params = (param_cases_p1, param_cases_p2, param_cases_p3)
-  bol  = createBoL(sourceData, params)
+  bol, N = createBoL(sourceData, params)
 
   # simulates the disease dynamics based on the book of life
-  #data = simulateDiseaseDynamics(bol)
+  #data = simulateDiseaseDynamics(bol) # also computes general epidemiological stats, se [1]
 
   # saves the results
-  #saveAsText(list2content(data), join(*param_targetpath, 'surveillance_data.csv'))
+  print()
+  tsprint('Saving the results')
+  serialise(sourceData, join(*param_targetpath, 'sourceData'))
+  serialise(dict(bol), join(*param_targetpath, 'bol'))
+  saveAsText(bol2content(param_territory, bol, N), join(*param_targetpath, 'book_of_life.csv'))
 
   #---------------------------------------------------------------------------------------------
   # That's it!

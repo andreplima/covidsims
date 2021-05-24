@@ -10,7 +10,8 @@ from configparser import RawConfigParser
 
 ECO_SEED = 23
 ECO_PRECISION = 1E-9
-ECO_DATETIME_FMT = '%Y%m%d%H%M%S'
+ECO_DATETIME_FMT = '%Y%m%d%H%M%S' # used in logging
+ECO_RAWDATEFMT   = '%Y-%m-%d'     # used in file/memory operations
 ECO_FIELDSEP = ','
 
 ECO_SUSCEPTIBLE = 'S'
@@ -316,7 +317,7 @@ def loadSourceData(sourcepath, filename, territory, popsizes):
   #  5  casosNovos
   #  6  obitosNovos
 
-  fieldTypes    = {3: '%Y-%m-%d', 4: 'int', 5: 'int', 6: 'int'}
+  fieldTypes    = {3: ECO_RAWDATEFMT, 4: 'int', 5: 'int', 6: 'int'}
 
   sourceData = []
   for e in file2List(os.path.join(*sourcepath, filename)):
@@ -331,17 +332,56 @@ def loadSourceData(sourcepath, filename, territory, popsizes):
         for i in fieldTypes:
           if(fieldTypes[i] == 'int'):
             buffer[i] = int(float(buffer[i]))
-          elif(fieldTypes[i] == '%Y-%m-%d'):
+          elif(fieldTypes[i] == ECO_RAWDATEFMT):
             buffer[i] = datetime.strptime(buffer[i], fieldTypes[i])
         sourceData.append(buffer[2:])
 
   return sourceData
 
+#def createBoL(sourceData, params):
+#
+#  # builds the roulette from the case severity stats
+#  (probs, recovery) = zip(*params)
+#  roulette = [sum(probs[:k+1]) for k in range(len(probs))] #xxx make this memory-based
+#
+#  def playRoulette():
+#    p = random()
+#    k = 0
+#    while p > roulette[k]:
+#      k += 1
+#    return recovery[k]
+#
+#  # builds the book of life
+#  bol = defaultdict(lambda: defaultdict(int))
+#  for (territory, date, N, newCases, newDeaths) in sourceData:
+#
+#    # processes the new cases
+#    for _ in range(newCases):
+#
+#      # (1) a new active case is accounted, and ...
+#      bol[date][ECO_INFECTIOUS] += 1
+#
+#      # (2) ... after some time, the case is resolved, for the better ...
+#      dt = timedelta(days = playRoulette()) # xxx add normal noise?
+#      bol[date + dt][ECO_INFECTIOUS] -= 1
+#      bol[date + dt][ECO_RECOVERED]  += 1 # P1: assumes everyone recovers
+#
+#    # processes the new deaths
+#    for _ in range(newDeaths):
+#
+#      # (3) ... or for the worse.
+#      bol[date][ECO_RECOVERED] -= 1 # retracts the assumption P1
+#      bol[date][ECO_DECEASED]  += 1
+#
+#    # xxx issues with balance
+#
+#  return bol, N
+
 def createBoL(sourceData, params):
 
   # builds the roulette from the case severity stats
   (probs, recovery) = zip(*params)
-  roulette = [sum(probs[:k+1]) for k in range(len(probs))]
+  roulette = [sum(probs[:k+1]) for k in range(len(probs))] #xxx make this memory-based
 
   def playRoulette():
     p = random()
@@ -360,18 +400,36 @@ def createBoL(sourceData, params):
       # (1) a new active case is accounted, and ...
       bol[date][ECO_INFECTIOUS] += 1
 
-      # (2) ... after some time, this is resolved, for the better ...
-      dt = timedelta(days = playRoulette()) # xxx add normal noise?
-      bol[date + dt][ECO_INFECTIOUS] -= 1
-      bol[date + dt][ECO_RECOVERED]  += 1 # P1: assumes everyone recovers
-
     # processes the new deaths
     for _ in range(newDeaths):
 
       # (3) ... or for the worse.
-      bol[date][ECO_RECOVERED] -= 1 # retracts the assumption P1
       bol[date][ECO_DECEASED]  += 1
 
     # xxx issues with balance
 
-  return bol
+  return bol, N
+
+def bol2content(territory, bol, N):
+
+  # creates the timeline and reverse dictionary
+  timeline = sorted(bol)
+  date2t   = {date: t for (t, date) in enumerate(timeline)}
+
+  # converts content to textual format
+  header = '{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}'.format('Territory', 'Date', 't', 'N', 'S(t)', 'I(t)', 'R(t)', 'D(t)')
+  content = [header]
+
+  for date in timeline:
+
+    buffer = '{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}'.format(territory,
+                                                             date.strftime(ECO_RAWDATEFMT),
+                                                             date2t[date],
+                                                             N,
+                                                             bol[date][ECO_SUSCEPTIBLE],
+                                                             bol[date][ECO_INFECTIOUS],
+                                                             bol[date][ECO_RECOVERED],
+                                                             bol[date][ECO_DECEASED])
+    content.append(buffer)
+
+  return '\n'.join(content)
