@@ -1,0 +1,176 @@
+SIAM Chapter ICMC - Resources
+
+#---------------------------------------------------------------------------------------------------
+# Where are you going?
+#---------------------------------------------------------------------------------------------------
+
+	What is the problem being approached by the group?
+	 To develop an epidemiological model to inform the selection of interventions to contain COVID-19 spread in the Brazilian territory. In other words, to develop a model to assign a measure of comparative efficiency to available interventions.
+
+	Why are we spending our precious time approaching this problem?
+		To contribute to ongoing efforts to ameliorate socioeconomic impacts of COVID-19.
+
+	Materials: health surveillance data obtained from an online platform [1].
+
+	Method: the group will adopt a number of methods to tackle the problem:
+
+		{STATE; this is where I believe we are headed now}
+		(1) A data-driven method to fit a SIRD model to surveillance data, aiming to forecast the evolution of new infections, recoveries, and deaths in the short-term. This fitting will be done by exploring machine learning strategies.
+		It must be noticed though that this model seeks to forecast the disease short-term dynamics under the assumption that no intervention will be made by health authorities. {CONTROVERSE} This premise severely circumscribes the use of the model to indicate that some intervention ought to be made to reduce some relevant risk, such as excess demand for bed-days or ICU-days. The model would be more useful if it could be used to support the selection (and calibration) of available interventions to contain the spread of the disease (as in [10]).
+
+#---------------------------------------------------------------------------------------------------
+# SIR-like epidemiological models
+#---------------------------------------------------------------------------------------------------
+
+	Typical variables of SIR-like models:
+
+		[população, N]: The number of individuals in a territorry
+		[Suscetible, S(t)]: The number of susceptible individuals (a counting variable)
+		[Infectious, I(t)]: The number of infectious individuals (a counting variable); also infected; infective
+		[Recovered, R(t)]: The number of recovered (and immune) individuals (a counting variable)
+		[Deceased, D(t)]: The number of deceased individuals (a counting variable)
+		[$\beta$]: transmission rate [1], contact rate [3]
+		[$\gamma$]: recovery rate in SIR model [1]
+		[$\gamma_r$]: recovery rate in SIRD model [1]
+		[$\gamma_d$]: death rate in SIRD model [1], infection fatality ratio?
+		[$R_0$]: Basic case reproduction number, $R_0 = \frac{\beta}{\gamma}$
+
+		[attack rate]: [10]
+
+	Typical SIR-like models:
+
+		{TO DO} check wikipedia-glossary
+			https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology
+			https://en.wikipedia.org/wiki/List_of_COVID-19_simulation_models
+
+		{TO DO} check wolfram
+			[18:18, 21/05/2021] +55 16 99108-5626: https://community.wolfram.com/groups/-/m/t/1896178
+
+		[SIRDC] Susceptible-Infectious-Resolving-Dead-reCovered
+
+	Making explicit the assumptions of the SIR model:
+		(1) {TO DO} see [4,5]
+
+	A couple of distinctions that are relevant to clarify some typical sources of modelling errors in epidemiology:
+
+		(1) epidemic vs endemic models [4]: "Epidemic models are used to describe rapid outbreaks that occur in less than one year, while endemic models are used for studying diseases over longer periods, during which there is a renewal of susceptibles by births or recovery from temporary immunity."
+
+		(2) macro vs micro models: macro models seek to represent the disease dynamics at the population level (e.g., SIR-like models), whereas micro models seek to simulate the disease dynamics at lower levels (e.g. individual-based models).
+
+			(2.1) Ferguson's research group at the Imperial College has being using the latter: "We parameterize an individual-based simulation model of pandemic influenza transmission for GB and the US using high-resolution population density data and data on travel patterns. We extend the model by incorporating realistic seeding of infection (via international travel) in the modelled countries, and by explicitly modelling air travel within the US (air travel being relatively insignificant in GB due to its much smaller size). The model represents transmission in households, schools and workplaces, and the wider community." [10]
+
+			{TO DO} Ask IBGE/CS if 2022 NAtional Census will collect data to create a simulation model similar to [10].
+
+			(2.2) What do you mean by "level"? See [12].
+
+
+#---------------------------------------------------------------------------------------------------
+# Questions and attempted answers
+#---------------------------------------------------------------------------------------------------
+
+Are SIR-like models still being applied in modern literature on epidemiology?
+	Yes, it seems:
+	https://link.springer.com/article/10.1007/s10654-021-00748-2
+	https://www.sciencedirect.com/science/article/pii/S0895435621000871
+	https://www.nature.com/articles/s41598-020-80007-8
+
+Are SIR-like models been taught to students in health-related tracks?
+	Well, I could not find any reference to SIR-like models in Gordis (new version) [13] and Stefens [14], which are textbooks used in courses on epidemiology in our university [15]. I wonder why is that so.
+
+An important assumption of the SIR model is that recovered individuals are permanently immune to the disease. How confident are we rationally warranted to believe that this is the case with COVID-19? After all, there is evidence suggesting that recurrence and reinfection may occur:
+	https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(21)00662-0/fulltext
+	https://www.journalofinfection.com/article/S0163-4453(21)00043-8/fulltext (Brazil)
+	https://www.sciencedirect.com/science/article/pii/S187603412100006X
+	https://www.sciencedirect.com/science/article/pii/S1047279721000612?via%3Dihub
+
+#---------------------------------------------------------------------------------------------------
+# References
+#---------------------------------------------------------------------------------------------------
+
+[1] Fabio Amaral and Wallace Casaca and Cassio M. Oishi and José A. Cuminato. "Towards Providing Effective Data-Driven Responses to Predict the Covid-19 in São Paulo and Brazil." Sensors 21, no. 2 (2021): 540. https://www.mdpi.com/1424-8220/21/2/540
+{ICMC}{SIRD model}{see ref 41}
+
+[2] P. H. P. Cintra and M. F. Citeli and F. N. Fontinele. "Mathematical models for describing and predicting the covid-19 pandemic crisis." arXiv preprint arXiv:2006.02507 (2020). https://arxiv.org/abs/2006.02507
+{UnB}{SEIR model, SIR model}
+
+[3] Fernández-Villaverde, Jesús, and Charles I. Jones. Estimating and simulating a SIRD model of COVID-19 for many countries, states, and cities. No. w27128. National Bureau of Economic Research, 2020. https://www.nber.org/system/files/working_papers/w27128/w27128.pdf
+{US National Bureau of Economic Research}{SIRD model; SIRDC, SEIRD, SEIR}
+
+[4] Hethcote, Herbert W. "The mathematics of infectious diseases." SIAM review 42, no. 4 (2000): 599-653. https://doi.org/10.1137/S0036144500371907
+
+[5] Okabe, Yutaka, and Akira Shudo. "A Mathematical Model of Epidemics - A Tutorial for Students." Mathematics 8, no. 7 (2020): 1174. https://www.mdpi.com/2227-7390/8/7/1174
+
+[6] Khan, Z., Van Bussel, F., & Hussain, F. (2020). A predictive model for Covid-19 spread – with application to eight US states and how to end the pandemic. Epidemiology and Infection, 148, E249. doi:10.1017/S0950268820002423 {SIR model, SQUIDER model}
+
+[7] Adam, David. "Special report: The simulations driving the world's response to COVID-19." Nature 580, no. 7802 (2020): 316-319. https://www.nature.com/articles/d41586-020-01003-6
+
+[8] Ferguson, Neil M., Daniel Laydon, Gemma Nedjati-Gilani, Natsuko Imai, Kylie Ainslie, Marc Baguelin, Sangeeta Bhatia et al. "Impact of non-pharmaceutical interventions (NPIs) to reduce COVID-19 mortality and healthcare demand. Imperial College COVID-19 Response Team." Imperial College COVID-19 Response Team (2020). https://spiral.imperial.ac.uk:8443/handle/10044/1/77482
+
+[9] Halloran, M. Elizabeth, Neil M. Ferguson, Stephen Eubank, Ira M. Longini, Derek AT Cummings, Bryan Lewis, Shufu Xu et al. "Modeling targeted layered containment of an influenza pandemic in the United States." Proceedings of the National Academy of Sciences 105, no. 12 (2008): 4639-4644. https://doi.org/10.1073/pnas.0706849105
+
+[10] Ferguson, Neil M., Derek AT Cummings, Christophe Fraser, James C. Cajka, Philip C. Cooley, and Donald S. Burke. "Strategies for mitigating an influenza pandemic." Nature 442, no. 7101 (2006): 448-452. http://doi.org/10.1038/nature04795
+
+[11] Railsback, Steven F., and Volker Grimm. Agent-Based and Individual-Based Modeling: A Practical Introduction. Princeton; Oxford: Princeton University Press, 2011.
+
+[12] Woodward, James. "Levels: What are they and what are they good for?." Levels of Analysis in Psychopathology: Cross Disciplinary Perspectives (2020): 424-449.
+
+[13] Gordis
+
+[14] Stefens: https://usp.minhabiblioteca.com.br/#/books/9788595023154/cfi/8!/4/4@0.00:0.00
+
+[15] curso de epidemiologia no e-disciplinas
+
+[16] COVID, IHME, and Christopher JL Murray. "Forecasting COVID-19 impact on hospital bed-days, ICU-days, ventilator-days and deaths by US state in the next 4 months." MedRxiv (2020). https://www.medrxiv.org/content/10.1101/2020.03.27.20043752v1.full
+
+#---------------------------------------------------------------------------------------------------
+# Additional resources
+#---------------------------------------------------------------------------------------------------
+
+A machine learning method that can be explored to solve the inverse problem in hands:
+	@Andre Lima  acho que é esse o artigo sobre o método usado no problema de inversão de dados sísmicos https://arxiv.org/pdf/2008.12833.pdf
+	É esse mesmo. E acho que o código que ele usou está aqui: https://github.com/gabrielspadon/ReGENN
+
+Surveillance tools? (I was not able to download data from these tools)
+	[20:17, 21/04/2021] Diany Pressato: https://github.com/CSSEGISandData/COVID-19
+	[20:17, 21/04/2021] Diany Pressato: http://www.spcovid.net.br
+
+Books
+
+	(book) Finite difference methods for ordinary and partial differential equations
+	(book) Mathematical models in population biology and epidemiology (2nd ed)
+	(book) Stochastic population and epidemic models
+
+#---------------------------------------------------------------------------------------------------
+# Other (less-related) resources
+#---------------------------------------------------------------------------------------------------
+
+Geometria Diferencial Discreta: https://www.youtube.com/playlist?list=PL9_jI1bdZmz0hIrNCMQW1YmZysAiIYSSS
+
+Social impacts of COVID-19: https://www.un.org/development/desa/dspd/world-social-report/2021-2.html
+
+[20:18, 21/04/2021] Diany Pressato:
+	https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.odeint.html#scipy.integrate.odeint
+
+[19:34, 05/05/2021] Diany Pressato: https://colab.research.google.com/drive/11neEJ-HC2DFwPRdZ9gMH7QFH5_E9cwor
+
+[20:17, 05/05/2021] Diany Pressato: resuminho da reunião:
+https://drive.google.com/file/d/11H7pxtwMvtfPtrpoMWMKrDzcdBBGHdlM/view?usp=sharing
+
+#---------------------------------------------------------------------------------------------------
+# Ongoing tasks
+#---------------------------------------------------------------------------------------------------
+
+Tarefa que eu peguei:
+1-) estamos sem os dados dos recovered. Seria interessante olharmos a referência dos dados do Infotracker para o cálculo dos recovered, baseada na metodologia da Universidade de Melbourne ( http://covid19forecast.science.unimelb.edu.au/ ); resumindo, precisamos estimar o parâmetro Rdata;
+
+	Conforme nota publicada em https://www.viser.com.br/covid-19/sp-covid-info-tracker, "para aferir A(t) e Rec(t) tal como apresentada na plataforma on-line, foi considerada a Metodologia 2"
+
+	Não sei como os dados foram coletados pela Diany e Matheus
+		resuminho rápido do que temos em dados: infectados até determinado dia, infectados exatamente naquele dia, óbitos acumulados, óbitos em determinado dia; os dados são todos diários, e temos dados desde fevereiro de 2020 até ontem. os dados limpos são do estado de São Paulo, mas tenho para o Brasil todo também
+
+
+
+
+
+
+

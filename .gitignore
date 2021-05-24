@@ -1,0 +1,12 @@
+__pycache__/
+*.bak
+*.zip
+*.lnk
+*.pyc
+*.pkl
+*.mp4
+*.png
+*.jpg
+*.csv
+*.log
+~*.*
