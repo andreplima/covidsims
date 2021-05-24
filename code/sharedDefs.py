@@ -3,6 +3,7 @@ import pickle
 import codecs
 import numpy as np
 
+from copy         import copy
 from random       import seed, random
 from datetime     import datetime, timedelta
 from collections  import OrderedDict, defaultdict
@@ -12,7 +13,9 @@ ECO_SEED = 23
 ECO_PRECISION = 1E-9
 ECO_DATETIME_FMT = '%Y%m%d%H%M%S' # used in logging
 ECO_RAWDATEFMT   = '%Y-%m-%d'     # used in file/memory operations
-ECO_FIELDSEP = ','
+ECO_FIELDSEP     = ','
+
+ECO_ROULETTE_SIZE = 100
 
 ECO_SUSCEPTIBLE = 'S'
 ECO_INFECTIOUS  = 'I'
@@ -140,7 +143,7 @@ def setEssayParameter(param, value):
 
   # parameters that requires eval expansion
   elif(so_param in ['PARAM_SOURCEPATH', 'PARAM_TARGETPATH', 'PARAM_POPSIZES',
-                    'PARAM_CASES_P1', 'PARAM_CASES_P2', 'PARAM_CASES_P3']):
+                    'PARAM_OUTCOMES']):
 
     so_value = value
 
@@ -219,14 +222,8 @@ def loadEssayConfig(configFile):
       if('PARAM_POPSIZES' in EssayParameters):
         EssayParameters['PARAM_POPSIZES']  = eval(EssayParameters['PARAM_POPSIZES'][0])
 
-      if('PARAM_CASES_P1' in EssayParameters):
-        EssayParameters['PARAM_CASES_P1']  = eval(EssayParameters['PARAM_CASES_P1'][0])
-
-      if('PARAM_CASES_P2' in EssayParameters):
-        EssayParameters['PARAM_CASES_P2']  = eval(EssayParameters['PARAM_CASES_P2'][0])
-
-      if('PARAM_CASES_P3' in EssayParameters):
-        EssayParameters['PARAM_CASES_P3']  = eval(EssayParameters['PARAM_CASES_P3'][0])
+      if('PARAM_OUTCOMES' in EssayParameters):
+        EssayParameters['PARAM_OUTCOMES']  = eval(EssayParameters['PARAM_OUTCOMES'][0])
 
       # checks if configuration is ok
       (check, errors) = checkEssayConfig(configFile)
@@ -338,83 +335,58 @@ def loadSourceData(sourcepath, filename, territory, popsizes):
 
   return sourceData
 
-#def createBoL(sourceData, params):
-#
-#  # builds the roulette from the case severity stats
-#  (probs, recovery) = zip(*params)
-#  roulette = [sum(probs[:k+1]) for k in range(len(probs))] #xxx make this memory-based
-#
-#  def playRoulette():
-#    p = random()
-#    k = 0
-#    while p > roulette[k]:
-#      k += 1
-#    return recovery[k]
-#
-#  # builds the book of life
-#  bol = defaultdict(lambda: defaultdict(int))
-#  for (territory, date, N, newCases, newDeaths) in sourceData:
-#
-#    # processes the new cases
-#    for _ in range(newCases):
-#
-#      # (1) a new active case is accounted, and ...
-#      bol[date][ECO_INFECTIOUS] += 1
-#
-#      # (2) ... after some time, the case is resolved, for the better ...
-#      dt = timedelta(days = playRoulette()) # xxx add normal noise?
-#      bol[date + dt][ECO_INFECTIOUS] -= 1
-#      bol[date + dt][ECO_RECOVERED]  += 1 # P1: assumes everyone recovers
-#
-#    # processes the new deaths
-#    for _ in range(newDeaths):
-#
-#      # (3) ... or for the worse.
-#      bol[date][ECO_RECOVERED] -= 1 # retracts the assumption P1
-#      bol[date][ECO_DECEASED]  += 1
-#
-#    # xxx issues with balance
-#
-#  return bol, N
-
-def createBoL(sourceData, params):
-
-  # builds the roulette from the case severity stats
-  (probs, recovery) = zip(*params)
-  roulette = [sum(probs[:k+1]) for k in range(len(probs))] #xxx make this memory-based
-
-  def playRoulette():
-    p = random()
-    k = 0
-    while p > roulette[k]:
-      k += 1
-    return recovery[k]
+def createBoL(sourceData, outcomes):
 
   # builds the book of life
   bol = defaultdict(lambda: defaultdict(int))
   for (territory, date, N, newCases, newDeaths) in sourceData:
 
-    # processes the new cases
-    for _ in range(newCases):
+    # accounts for newly reported cases and deaths
+    bol[date][ECO_INFECTIOUS] += newCases
+    bol[date][ECO_DECEASED]   += newDeaths
 
-      # (1) a new active case is accounted, and ...
-      bol[date][ECO_INFECTIOUS] += 1
+    # estimates the number of recovered cases, using the methodology described in:
+    #   A. S. Peddireddy et al., "From 5Vs to 6Cs: Operationalizing Epidemic Data Management
+    #   with COVID-19 Surveillance," 2020 IEEE International Conference on Big Data (Big Data),
+    #   2020, pp. 1380-1387, doi: 10.1109/BigData50022.2020.9378435. (see Equation 1)
 
-    # processes the new deaths
-    for _ in range(newDeaths):
+    # It seems relevant to make explicit a number of premises adopted in this reasoning:
+    # P1: new cases are timely reported, meaning that the onset of the disease coincides with
+    #     the date of report of a new case
+    # P2: recovered individuals are assumed to be non-infective (they stop spreading the disease)
+    # xxx should be probabilistic, but it is not
 
-      # (3) ... or for the worse.
-      bol[date][ECO_DECEASED]  += 1
+    acc = 0
+    for (proportionOfCases, recoveryTime) in outcomes:
+      dt = timedelta(days = recoveryTime)
+      try:
+        acc += proportionOfCases * bol[date - dt][ECO_INFECTIOUS]
+      except:
+        None
+      bol[date][ECO_RECOVERED] = int(acc)
 
-    # xxx issues with balance
-
-  return bol, N
-
-def bol2content(territory, bol, N):
-
-  # creates the timeline and reverse dictionary
+  # creates the timeline and the reverse dictionary
   timeline = sorted(bol)
   date2t   = {date: t for (t, date) in enumerate(timeline)}
+
+
+
+
+  # creates the accumulated curves
+  sbol = {}
+  accs = {ECO_SUSCEPTIBLE: 0, ECO_INFECTIOUS: 0, ECO_RECOVERED: 0, ECO_DECEASED: 0}
+  for date in timeline:
+
+    accs[ECO_SUSCEPTIBLE] += bol[date][ECO_SUSCEPTIBLE]
+    accs[ECO_INFECTIOUS]  += bol[date][ECO_INFECTIOUS]
+    accs[ECO_RECOVERED]   += bol[date][ECO_RECOVERED]
+    accs[ECO_DECEASED]    += bol[date][ECO_DECEASED]
+
+    sbol[date] = copy(accs)
+
+  return bol, sbol, N, timeline, date2t
+
+def bol2content(territory, bol, N, timeline, date2t):
 
   # converts content to textual format
   header = '{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}'.format('Territory', 'Date', 't', 'N', 'S(t)', 'I(t)', 'R(t)', 'D(t)')

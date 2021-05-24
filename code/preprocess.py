@@ -3,7 +3,12 @@
   of new cases and new deaths, aiming to feed a SIRD model.
 
   [1] https://www.viser.com.br/covid-19/sp-covid-info-tracker
-  See note "para aferir A(t) e Rec(t) tal como apresentada na plataforma online, foi considerada a Metodologia 2".
+  See note:
+  "para aferir A(t) e Rec(t) tal como apresentada na plataforma online, foi considerada a Metodologia 2".
+  translation:
+  "The online platform assesses A(t) and Rec(t) according to Methodology 2", where A(t) corresponds to the
+  number of active cases (infective individuals) at time t, whereas Rec(t) represents the total number of
+  recoreved cases at time t.
 
   Raw data:
     regiao, estado, municipio, data,
@@ -16,7 +21,7 @@
 
   Resulting data
     territory, date,
-    N    :- number of individuals living in the territory
+    N    :- number of individuals residing at the territory
     S(t) :- number of susceptible individuals    -- estimated as N - I(t) - R(t) - D(t)
     I(t) :- number of active cases at time t     -- estimated as proposed in [1]
     R(t) :- number of recovered cases at time t  -- estimated as proposed in [1]
@@ -67,14 +72,7 @@ def main(configFile):
   param_rawdata    = getEssayParameter('PARAM_RAWDATA')
   param_territory  = getEssayParameter('PARAM_TERRITORY')
   param_popsizes   = getEssayParameter('PARAM_POPSIZES')
-  param_cases_p1   = getEssayParameter('PARAM_CASES_P1')
-  param_cases_p2   = getEssayParameter('PARAM_CASES_P2')
-  param_cases_p3   = getEssayParameter('PARAM_CASES_P3')
-
-  # overrides parameters recovered from the config file with environment variables
-  param_cases_p1   = overrideEssayParameter('PARAM_CASES_P1')
-  param_cases_p2   = overrideEssayParameter('PARAM_CASES_P2')
-  param_cases_p3   = overrideEssayParameter('PARAM_CASES_P3')
+  param_outcomes   = getEssayParameter('PARAM_OUTCOMES')
 
   # adjusts the output directory to account for essay and config IDs
   param_targetpath += [essayid, configid]
@@ -103,8 +101,7 @@ def main(configFile):
   # creates the "book of life" #xxx bol is not a good name
   print()
   tsprint('Creating the Book of Life')
-  params = (param_cases_p1, param_cases_p2, param_cases_p3)
-  bol, N = createBoL(sourceData, params)
+  (bol, sbol, N, timeline, date2t) = createBoL(sourceData, param_outcomes)
 
   # simulates the disease dynamics based on the book of life
   #data = simulateDiseaseDynamics(bol) # also computes general epidemiological stats, se [1]
@@ -114,7 +111,8 @@ def main(configFile):
   tsprint('Saving the results')
   serialise(sourceData, join(*param_targetpath, 'sourceData'))
   serialise(dict(bol), join(*param_targetpath, 'bol'))
-  saveAsText(bol2content(param_territory, bol, N), join(*param_targetpath, 'book_of_life.csv'))
+  serialise(sbol, join(*param_targetpath, 'bol'))
+  saveAsText(bol2content(param_territory, sbol, N, timeline, date2t), join(*param_targetpath, 'book_of_life.csv'))
 
   #---------------------------------------------------------------------------------------------
   # That's it!
