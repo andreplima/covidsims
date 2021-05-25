@@ -1,31 +1,31 @@
 """
-  This script uses the methodology described in [1] to derive the disease surveillance data from a dataset
-  of new cases and new deaths, aiming to feed a SIRD model.
+  This script uses a methodology described in [1] to derive SIRD-like epidemiological surveillance data from a
+  dataset of daily records of new cases and new deaths. The methodology is further detailed in [2].
 
   [1] https://www.viser.com.br/covid-19/sp-covid-info-tracker
-  See note:
-  "para aferir A(t) e Rec(t) tal como apresentada na plataforma online, foi considerada a Metodologia 2".
-  translation:
-  "The online platform assesses A(t) and Rec(t) according to Methodology 2", where A(t) corresponds to the
-  number of active cases (infective individuals) at time t, whereas Rec(t) represents the total number of
-  recoreved cases at time t.
+  [2] A. S. Peddireddy et al., "From 5Vs to 6Cs: Operationalizing Epidemic Data Management with COVID-19 Surveillance,"
+      IEEE International Conference on Big Data (Big Data), 2020, pp. 1380-1387,
+      doi: 10.1109/BigData50022.2020.9378435. (see Equation 1)
 
-  Raw data:
-    regiao, estado, municipio, data,
-    populacao, casosAcumulado, casosNovos, obitosAcumulado, obitosNovos,
-    Recuperadosnovos, emAcompanhamentoNovos
+  See note: "para aferir A(t) e Rec(t) tal como apresentada na plataforma online, foi considerada a Metodologia 2".
+  translation: "The online platform assesses A(t) and Rec(t) according to Methodology 2",
+  with A(t)   corresponding to the number of active cases (infective individuals) at time t,
+   and Rec(t) corresponding to the total number of recovered cases at time t.
+
+  Input data (the format of the input data file):
+    regiao, estado, municipio, date,
+    populacao, casosAcumulado, casosNovos, obitosAcumulado, obitosNovos, Recuperadosnovos, emAcompanhamentoNovos
 
   Source data (i.e., data that is actually used to derive the surveillance data):
     territory, date,
-    N, newCases, newDeaths
+    newCases, newDeaths
 
-  Resulting data
+  Processed data:
     territory, date,
-    N    :- number of individuals residing at the territory
     S(t) :- number of susceptible individuals    -- estimated as N - I(t) - R(t) - D(t)
     I(t) :- number of active cases at time t     -- estimated as proposed in [1]
     R(t) :- number of recovered cases at time t  -- estimated as proposed in [1]
-    D(t) :- number of deaths occurred at time t  -- measured
+    D(t) :- number of deaths occurred at time t  -- measured by agents in charge of surveillance
 """
 
 import os
@@ -37,21 +37,20 @@ from os         import listdir, makedirs, remove
 from os.path    import join, isfile, isdir, exists
 from random     import seed
 
-from sharedDefs import getMountedOn, ECO_SEED
+from sharedDefs import ECO_SEED
 from sharedDefs import setupEssayConfig, getEssayParameter, setEssayParameter, overrideEssayParameter
-from sharedDefs import serialise, saveAsText, stimestamp, tsprint, saveLog
-from sharedDefs import loadSourceData, createBoL, bol2content
+from sharedDefs import getMountedOn, serialise, saveAsText, stimestamp, tsprint, saveLog
+from sharedDefs import loadSourceData, createTimeline, createBoL, bol2content, playBoL
 
 def main(configFile):
 
   ud.LogBuffer = []
 
-  # recovers the of the config file
+  # parses the config file
   tsprint('Running essay with specs recovered from [{0}]\n'.format(configFile))
   if(not isfile(configFile)):
     print('Command line parameter is not a file: {0}'.format(configFile))
     exit(1)
-
   tsprint('Processing essay configuration file [{0}]\n{1}'.format(configFile, setupEssayConfig(configFile)))
 
   # recovers attributes that identify the essay
@@ -61,18 +60,19 @@ def main(configFile):
   label    = getEssayParameter('ESSAY_LABEL')
   replicas = getEssayParameter('ESSAY_RUNS')
 
+  # recovers parameters related to the problem instance
+  param_sourcepath = getEssayParameter('PARAM_SOURCEPATH')
+  param_targetpath = getEssayParameter('PARAM_TARGETPATH')
+  param_datafile   = getEssayParameter('PARAM_DATAFILE')
+  param_territory  = getEssayParameter('PARAM_TERRITORY')
+  param_popsizes   = getEssayParameter('PARAM_POPSIZES')
+  param_outcomes   = getEssayParameter('PARAM_OUTCOMES')
+  param_ma_window  = getEssayParameter('PARAM_MA_WINDOW')
+
   # ensures the essay slot (where some log files will be created) is available
   essay_beginning_ts = stimestamp()
   slot  = join('..', 'essays', essayid, configid, essay_beginning_ts)
   if(not exists(slot)): makedirs(slot)
-
-  # recovers parameters related to the problem instance
-  param_sourcepath = getEssayParameter('PARAM_SOURCEPATH')
-  param_targetpath = getEssayParameter('PARAM_TARGETPATH')
-  param_rawdata    = getEssayParameter('PARAM_RAWDATA')
-  param_territory  = getEssayParameter('PARAM_TERRITORY')
-  param_popsizes   = getEssayParameter('PARAM_POPSIZES')
-  param_outcomes   = getEssayParameter('PARAM_OUTCOMES')
 
   # adjusts the output directory to account for essay and config IDs
   param_targetpath += [essayid, configid]
@@ -84,7 +84,7 @@ def main(configFile):
   else:
     makedirs(join(*param_targetpath))
 
-  # initialises the random seed
+  # initialises the random number generator
   seed(ECO_SEED)
 
   #---------------------------------------------------------------------------------------------
@@ -93,26 +93,34 @@ def main(configFile):
 
   # loads the dataset
   tsprint('Loading raw data')
-  sourceData = loadSourceData(param_sourcepath, param_rawdata, param_territory, param_popsizes) #xxx moving average?
+  (sourceData, N) = loadSourceData(param_sourcepath, param_datafile, param_territory, param_popsizes)
+  (timeline, date2t) = createTimeline(sourceData)
   tsprint('-- {0} records have been loaded.'.format(len(sourceData)))
   print(sourceData[0])
   print(sourceData[-1])
 
-  # creates the "book of life" #xxx bol is not a good name
+  # creates a "book of life", which is to be understood as a daily record of who will be sick,
+  # and recover or die, from a reference point in time that preceeds the initial reported event
   print()
   tsprint('Creating the Book of Life')
-  (bol, sbol, N, timeline, date2t) = createBoL(sourceData, param_outcomes)
+  bol = createBoL(sourceData, timeline, date2t, param_outcomes, param_ma_window)
+  tsprint('-- {0} records have been created.'.format(len(bol)))
 
   # simulates the disease dynamics based on the book of life
-  #data = simulateDiseaseDynamics(bol) # also computes general epidemiological stats, se [1]
+  # (also computes general epidemiological stats, see [1])
+  print()
+  tsprint('Playing the Book of Life forward')
+  (data, stats) = playBoL(bol, timeline, N)
+  tsprint('-- {0} records have been created.'.format(len(data)))
 
   # saves the results
   print()
   tsprint('Saving the results')
   serialise(sourceData, join(*param_targetpath, 'sourceData'))
-  serialise(dict(bol), join(*param_targetpath, 'bol'))
-  serialise(sbol, join(*param_targetpath, 'bol'))
-  saveAsText(bol2content(param_territory, sbol, N, timeline, date2t), join(*param_targetpath, 'book_of_life.csv'))
+  serialise(dict(bol),  join(*param_targetpath, 'bol'))
+  serialise(data, join(*param_targetpath, 'data'))
+  saveAsText(bol2content(param_territory, bol,  N, timeline, date2t, True), join(*param_targetpath, 'daily_changes.csv'))
+  saveAsText(bol2content(param_territory, data, N, timeline, date2t),       join(*param_targetpath, 'surveillance.csv'))
 
   #---------------------------------------------------------------------------------------------
   # That's it!

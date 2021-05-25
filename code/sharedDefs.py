@@ -22,8 +22,10 @@ ECO_INFECTIOUS  = 'I'
 ECO_RECOVERED   = 'R'
 ECO_DECEASED    = 'D'
 
+ECO_CONFIRMED   = 'C'
+
 #-----------------------------------------------------------------------------------------------------------
-# Timing and I/O helper functions
+# General purpose definitions - I/O helper functions
 #-----------------------------------------------------------------------------------------------------------
 
 LogBuffer = [] # buffer where all tsprint messages are stored
@@ -91,7 +93,7 @@ def getMountedOn():
   return res
 
 #-------------------------------------------------------------------------------------------------------------------------------------------
-# Parameter files helper functions
+# General purpose definitions - interface to handle parameter files
 #-------------------------------------------------------------------------------------------------------------------------------------------
 
 # Essay Parameters hashtable
@@ -132,7 +134,7 @@ def setEssayParameter(param, value):
     so_value = eval(value[0]) if isinstance(value, list) else bool(value)
 
   # integer-valued parameters
-  elif(so_param in ['ESSAY_RUNS', 'PARAM_MAXCORES']):
+  elif(so_param in ['ESSAY_RUNS', 'PARAM_MAXCORES', 'PARAM_MA_WINDOW']):
 
     so_value = eval(value[0])
 
@@ -142,7 +144,7 @@ def setEssayParameter(param, value):
     so_value = float(eval(value[0]))
 
   # parameters that requires eval expansion
-  elif(so_param in ['PARAM_SOURCEPATH', 'PARAM_TARGETPATH', 'PARAM_POPSIZES',
+  elif(so_param in ['PARAM_SOURCEPATH', 'PARAM_TARGETPATH', 'PARAM_TERRITORY', 'PARAM_POPSIZES',
                     'PARAM_OUTCOMES']):
 
     so_value = value
@@ -219,6 +221,9 @@ def loadEssayConfig(configFile):
       if('PARAM_TARGETPATH' in EssayParameters):
         EssayParameters['PARAM_TARGETPATH']  = eval(EssayParameters['PARAM_TARGETPATH'][0])
 
+      if('PARAM_TERRITORY' in EssayParameters):
+        EssayParameters['PARAM_TERRITORY']  = eval(EssayParameters['PARAM_TERRITORY'][0])
+
       if('PARAM_POPSIZES' in EssayParameters):
         EssayParameters['PARAM_POPSIZES']  = eval(EssayParameters['PARAM_POPSIZES'][0])
 
@@ -283,12 +288,10 @@ def listEssayConfig():
   return res
 
 #-------------------------------------------------------------------------------------------------------------------------------------------
-# Problem specific functions
+# Problem specific definitions - preprocessing surveillance data
 #-------------------------------------------------------------------------------------------------------------------------------------------
 
 def loadSourceData(sourcepath, filename, territory, popsizes):
-
-  (level0, level1, level2) = [s.strip() for s in territory.split(ECO_FIELDSEP)]
 
   #- field order in the raw data
   #  0  regiao
@@ -303,47 +306,73 @@ def loadSourceData(sourcepath, filename, territory, popsizes):
   #  9  Recuperadosnovos
   # 10  emAcompanhamentoNovos
 
-  sourceFields  = [0, 1, 2, 3, 4, 6, 8]
+
+  # determines the fields in the raw data that will compose the source data
+  sourceFields  = [0, 1, 2, 3, 6, 8]
 
   #- field order in the source data
   #  0  regiao
   #  1  estado
   #  2  municipio
   #  3  data
-  #  4  populacao
-  #  5  casosNovos
-  #  6  obitosNovos
+  #  4  casosNovos
+  #  5  obitosNovos
 
-  fieldTypes    = {3: ECO_RAWDATEFMT, 4: 'int', 5: 'int', 6: 'int'}
+  # determines the data types into which source data fields must be converted
+  fieldTypes    = {3: ECO_RAWDATEFMT, 4: 'int', 5: 'int'}
 
+  # parses the territory data into its component areas (i.e., territorial units)
+  areas = [[s.strip() for s in area.split(ECO_FIELDSEP)] for area in territory]
+
+  # converts the raw data into the source data
+  allAreas = []
   sourceData = []
   for e in file2List(os.path.join(*sourcepath, filename)):
+
     buffer = [e[i] for i in sourceFields]
-    if(buffer[0] == level0 and buffer[1] == level1):
-      if(buffer[2] == ''):
-         buffer[2] = '*'
-      if(buffer[2] == level2):
-        buffer[2] = territory
-        if(popsizes[territory] > 0):
-          buffer[4] = popsizes[territory]
-        for i in fieldTypes:
-          if(fieldTypes[i] == 'int'):
-            buffer[i] = int(float(buffer[i]))
-          elif(fieldTypes[i] == ECO_RAWDATEFMT):
-            buffer[i] = datetime.strptime(buffer[i], fieldTypes[i])
-        sourceData.append(buffer[2:])
+    for (level0, level1, level2) in areas:
 
-  return sourceData
+      if((buffer[0] == level0 or level0 == '*') and
+         (buffer[1] == level1 or level1 == '*') and
+         (buffer[2] == level2 or level2 == '*')):
 
-def createBoL(sourceData, outcomes):
+          for k in range(3):
+            if(buffer[k] == ''): buffer[k] = '*'
+          newArea = '{0}, {1}, {2}'.format(buffer[0], buffer[1], buffer[2])
+          allAreas.append(newArea)
+          buffer[2] = newArea
+
+          for i in fieldTypes:
+            if(fieldTypes[i] == 'int'):
+              buffer[i] = int(float(buffer[i]))
+            elif(fieldTypes[i] == ECO_RAWDATEFMT):
+              buffer[i] = datetime.strptime(buffer[i], fieldTypes[i])
+
+          sourceData.append(buffer[2:])
+
+  # determines the population residing in the territory
+  N = sum([popsizes[area] for area in set(allAreas)])
+
+  return sourceData, N
+
+def createTimeline(sourceData):
+
+  # creates the timeline and the reverse dictionary
+  timeline = sorted(set([date for (territory, date, newCases, newDeaths) in sourceData]))
+  date2t   = {date: t for (t, date) in enumerate(timeline)}
+
+  return (timeline, date2t)
+
+def createBoL(sourceData, timeline, date2t, outcomes, ma_window = 1):
 
   # builds the book of life
   bol = defaultdict(lambda: defaultdict(int))
-  for (territory, date, N, newCases, newDeaths) in sourceData:
+  for (territory, date, newCases, newDeaths) in sourceData:
 
-    # accounts for newly reported cases and deaths
-    bol[date][ECO_INFECTIOUS] += newCases
-    bol[date][ECO_DECEASED]   += newDeaths
+    # records cases and deaths reported in the surveillance system
+    # (i.e., these variables are measured)
+    bol[date][ECO_CONFIRMED] = newCases
+    bol[date][ECO_DECEASED]  = newDeaths
 
     # estimates the number of recovered cases, using the methodology described in:
     #   A. S. Peddireddy et al., "From 5Vs to 6Cs: Operationalizing Epidemic Data Management
@@ -351,57 +380,68 @@ def createBoL(sourceData, outcomes):
     #   2020, pp. 1380-1387, doi: 10.1109/BigData50022.2020.9378435. (see Equation 1)
 
     # It seems relevant to make explicit a number of premises adopted in this reasoning:
+    # P0: cases and deaths ensured by the authority in charge of epidemiological surveillance
     # P1: new cases are timely reported, meaning that the onset of the disease coincides with
     #     the date of report of a new case
     # P2: recovered individuals are assumed to be non-infective (they stop spreading the disease)
-    # xxx should be probabilistic, but it is not
+    # xxx should be probabilistic, but it is not; will introduce need to replicate and assess
 
-    acc = 0
+    bol[date][ECO_SUSCEPTIBLE] = -newCases
+    bol[date][ECO_INFECTIOUS]  =  newCases
+
+    acc = 0 #xxx reverse time
     for (proportionOfCases, recoveryTime) in outcomes:
       dt = timedelta(days = recoveryTime)
       try:
-        acc += proportionOfCases * bol[date - dt][ECO_INFECTIOUS]
+        acc += proportionOfCases * bol[date - dt][ECO_CONFIRMED]
       except:
         None
-      bol[date][ECO_RECOVERED] = int(acc)
 
-  # creates the timeline and the reverse dictionary
-  timeline = sorted(bol)
-  date2t   = {date: t for (t, date) in enumerate(timeline)}
+    bol[date][ECO_RECOVERED]  = int(acc)
 
+  return bol
 
-
+def playBoL(bol, timeline, N):
 
   # creates the accumulated curves
-  sbol = {}
-  accs = {ECO_SUSCEPTIBLE: 0, ECO_INFECTIOUS: 0, ECO_RECOVERED: 0, ECO_DECEASED: 0}
+  data = {}
+  accs = {ECO_SUSCEPTIBLE: 0, ECO_INFECTIOUS: 0, ECO_RECOVERED: 0, ECO_DECEASED: 0, ECO_CONFIRMED: 0}
   for date in timeline:
 
-    accs[ECO_SUSCEPTIBLE] += bol[date][ECO_SUSCEPTIBLE]
-    accs[ECO_INFECTIOUS]  += bol[date][ECO_INFECTIOUS]
-    accs[ECO_RECOVERED]   += bol[date][ECO_RECOVERED]
     accs[ECO_DECEASED]    += bol[date][ECO_DECEASED]
+    accs[ECO_CONFIRMED]   += bol[date][ECO_CONFIRMED]
+    accs[ECO_RECOVERED]   += bol[date][ECO_RECOVERED]
 
-    sbol[date] = copy(accs)
+    accs[ECO_INFECTIOUS]  = accs[ECO_CONFIRMED] - accs[ECO_RECOVERED] - accs[ECO_DECEASED]
+    accs[ECO_SUSCEPTIBLE] = N - accs[ECO_CONFIRMED]
 
-  return bol, sbol, N, timeline, date2t
+    data[date] = copy(accs)
 
-def bol2content(territory, bol, N, timeline, date2t):
+    # computes additional epidemiological stats
+    stats = {}
+
+  return (data, stats)
+
+def bol2content(territory, bol, N, timeline, date2t, derivatives = False):
 
   # converts content to textual format
-  header = '{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}'.format('Territory', 'Date', 't', 'N', 'S(t)', 'I(t)', 'R(t)', 'D(t)')
-  content = [header]
+  buffer_mask = '{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}'
+  if(derivatives):
+    header = buffer_mask.format('Territory', 'Date', 't', 'N', '∆S(t)', '∆I(t)', '∆R(t)', '∆D(t)')
+  else:
+    header = buffer_mask.format('Territory', 'Date', 't', 'N', 'S(t)', 'I(t)', 'R(t)', 'D(t)')
 
+  content = [header]
   for date in timeline:
 
-    buffer = '{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}'.format(territory,
-                                                             date.strftime(ECO_RAWDATEFMT),
-                                                             date2t[date],
-                                                             N,
-                                                             bol[date][ECO_SUSCEPTIBLE],
-                                                             bol[date][ECO_INFECTIOUS],
-                                                             bol[date][ECO_RECOVERED],
-                                                             bol[date][ECO_DECEASED])
+    buffer = buffer_mask.format(territory,
+                                date.strftime(ECO_RAWDATEFMT),
+                                date2t[date],
+                                N,
+                                bol[date][ECO_SUSCEPTIBLE],
+                                bol[date][ECO_INFECTIOUS],
+                                bol[date][ECO_RECOVERED],
+                                bol[date][ECO_DECEASED])
     content.append(buffer)
 
   return '\n'.join(content)

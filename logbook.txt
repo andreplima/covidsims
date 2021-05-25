@@ -5,7 +5,7 @@ SIAM Chapter ICMC - Resources
 #---------------------------------------------------------------------------------------------------
 
 	What is the problem being approached by the group?
-	 To develop an epidemiological model to inform the selection of interventions to contain COVID-19 spread in the Brazilian territory. In other words, to develop a model to assign a measure of comparative efficiency to available interventions.
+	 To develop an epidemiological model to inform the selection of interventions to contain COVID-19 spread in the Brazilian territory. In other words, to develop a model to assign a relative measure of efficiency to available interventions.
 
 	Why are we spending our precious time approaching this problem?
 		To contribute to ongoing efforts to ameliorate socioeconomic impacts of COVID-19.
@@ -14,28 +14,35 @@ SIAM Chapter ICMC - Resources
 
 	Method: the group will adopt a number of methods to tackle the problem:
 
-		{STATE; this is where I believe we are headed now}
-		(1) A data-driven method to fit a SIRD model to surveillance data, aiming to forecast the evolution of new infections, recoveries, and deaths in the short-term. This fitting will be done by exploring machine learning strategies.
-		It must be noticed though that this model seeks to forecast the disease short-term dynamics under the assumption that no intervention will be made by health authorities. {CONTROVERSE} This premise severely circumscribes the use of the model to indicate that some intervention ought to be made to reduce some relevant risk, such as excess demand for bed-days or ICU-days. The model would be more useful if it could be used to support the selection (and calibration) of available interventions to contain the spread of the disease (as in [10]).
+		{STATE; I believe that we are now moving in this direction}
+		(1) A machine learning method to fit a SIRD-like model to surveillance data. Contact rate assumed variable, other parameters assumed constant in time. The aim is short-term forecast new infections, recoveries, and deaths.
+		It must noted that this arrangement lies on an implicit premise: the assumption that no intervention will be made by health authorities. {CONTROVERSE} This premise severely circumscribes the use of the model to indicate that some intervention ought to be made to reduce some relevant risk, such as excess demand for bed-days, ICU-days, or medical supplies. The model would be more useful if it could support the selection (and calibration) of available interventions to contain the spread of the disease (as in [10]).
+		{KEYWORDS; SIRD model, macro-level; machine learning; risk avoidance}
 
 #---------------------------------------------------------------------------------------------------
-# SIR-like epidemiological models
+# SIRD-like epidemiological models
 #---------------------------------------------------------------------------------------------------
 
-	Typical variables of SIR-like models:
+	Typical variables of SIRD-like models:
 
-		[população, N]: The number of individuals in a territorry
-		[Suscetible, S(t)]: The number of susceptible individuals (a counting variable)
-		[Infectious, I(t)]: The number of infectious individuals (a counting variable); also infected; infective
-		[Recovered, R(t)]: The number of recovered (and immune) individuals (a counting variable)
-		[Deceased, D(t)]: The number of deceased individuals (a counting variable)
-		[$\beta$]: transmission rate [1], contact rate [3]
-		[$\gamma$]: recovery rate in SIR model [1]
-		[$\gamma_r$]: recovery rate in SIRD model [1]
-		[$\gamma_d$]: death rate in SIRD model [1], infection fatality ratio?
-		[$R_0$]: Basic case reproduction number, $R_0 = \frac{\beta}{\gamma}$
+		[Population, N]: The number of individuals residing at a territorry
+		[Suscetible, S(t)]: The number of individuals susceptible to infection
+		[Infectious (or Infective), I(t)]: The number of individuals that are (possibly) infecting other individuals
+		[Recovered, R(t)]: The number of individuals that recovered from the disease and are now immune to new infection
+		[Deceased, D(t)]: The number of deceased individuals
+		-- Note: the above are counting variables
 
-		[attack rate]: [10]
+		[$\beta$]: transmission rate [1] or contact rate [3]  -- with dimensionality 1/([u][T])
+		[$\gamma_r$]: recovery rate [1]                       -- with dimensionality 1/[T]
+		[$\gamma_d$]: death rate [1] or mortality rate        -- with dimensionality 1/[T]
+		-- Note: the above are model parameters
+		
+		[$R_0$]: Basic case reproduction number, $R_0 = \frac{\beta}{\gamma}$  -- with dimensionality 1/[u]? makes no sense; {Confirm}
+
+		[attack rate]: {TO DO} [10]
+
+	Making explicit the assumptions of the SIRD model:
+		(1) {TO DO} see [4,5]
 
 	Typical SIR-like models:
 
@@ -47,34 +54,32 @@ SIAM Chapter ICMC - Resources
 			[18:18, 21/05/2021] +55 16 99108-5626: https://community.wolfram.com/groups/-/m/t/1896178
 
 		[SIRDC] Susceptible-Infectious-Resolving-Dead-reCovered
+		[SQUIDER] [6]
 
-	Making explicit the assumptions of the SIR model:
-		(1) {TO DO} see [4,5]
-
-	A couple of distinctions that are relevant to clarify some typical sources of modelling errors in epidemiology:
+	A couple of distinctions that are relevant to clarify typical sources of modelling errors in epidemiology:
 
 		(1) epidemic vs endemic models [4]: "Epidemic models are used to describe rapid outbreaks that occur in less than one year, while endemic models are used for studying diseases over longer periods, during which there is a renewal of susceptibles by births or recovery from temporary immunity."
 
-		(2) macro vs micro models: macro models seek to represent the disease dynamics at the population level (e.g., SIR-like models), whereas micro models seek to simulate the disease dynamics at lower levels (e.g. individual-based models).
+		(2) macro-level vs micro-level models: macro-level models seek to describe the behaviour of variables representing some aggregate aspect of the disease dynamics (e.g., SIR-like models have population-level variables); micro-level models seek to simulate the disease dynamics at lower levels (e.g. individual-based models).
 
 			(2.1) Ferguson's research group at the Imperial College has being using the latter: "We parameterize an individual-based simulation model of pandemic influenza transmission for GB and the US using high-resolution population density data and data on travel patterns. We extend the model by incorporating realistic seeding of infection (via international travel) in the modelled countries, and by explicitly modelling air travel within the US (air travel being relatively insignificant in GB due to its much smaller size). The model represents transmission in households, schools and workplaces, and the wider community." [10]
 
-			{TO DO} Ask IBGE/CS if 2022 NAtional Census will collect data to create a simulation model similar to [10].
+			{TO DO} Ask IBGE/CS if 2022 National Census will collect data to create a simulation model similar to [10].
 
-			(2.2) What do you mean by "level"? See [12].
+			(2.2) {CONTROVERSE} What do you mean by "level"? See [12].
 
 
 #---------------------------------------------------------------------------------------------------
 # Questions and attempted answers
 #---------------------------------------------------------------------------------------------------
 
-Are SIR-like models still being applied in modern literature on epidemiology?
+Have SIR-like models been recently employed in the literature on Epidemiology?
 	Yes, it seems:
 	https://link.springer.com/article/10.1007/s10654-021-00748-2
 	https://www.sciencedirect.com/science/article/pii/S0895435621000871
 	https://www.nature.com/articles/s41598-020-80007-8
 
-Are SIR-like models been taught to students in health-related tracks?
+Have SIR-like models been taught to students in health-related courses?
 	Well, I could not find any reference to SIR-like models in Gordis (new version) [13] and Stefens [14], which are textbooks used in courses on epidemiology in our university [15]. I wonder why is that so.
 
 An important assumption of the SIR model is that recovered individuals are permanently immune to the disease. How confident are we rationally warranted to believe that this is the case with COVID-19? After all, there is evidence suggesting that recurrence and reinfection may occur:
@@ -88,7 +93,7 @@ An important assumption of the SIR model is that recovered individuals are perma
 #---------------------------------------------------------------------------------------------------
 
 [1] Fabio Amaral and Wallace Casaca and Cassio M. Oishi and José A. Cuminato. "Towards Providing Effective Data-Driven Responses to Predict the Covid-19 in São Paulo and Brazil." Sensors 21, no. 2 (2021): 540. https://www.mdpi.com/1424-8220/21/2/540
-{ICMC}{SIRD model}{see ref 41}
+{ICMC}{SIRD model}{see ref 41 for stiff/non-stiff SODEs; more on this in https://www.mathworks.com/company/newsletters/articles/stiff-differential-equations.html; https://en.wikipedia.org/wiki/Stiff_equation}
 
 [2] P. H. P. Cintra and M. F. Citeli and F. N. Fontinele. "Mathematical models for describing and predicting the covid-19 pandemic crisis." arXiv preprint arXiv:2006.02507 (2020). https://arxiv.org/abs/2006.02507
 {UnB}{SEIR model, SIR model}
@@ -114,11 +119,11 @@ An important assumption of the SIR model is that recovered individuals are perma
 
 [12] Woodward, James. "Levels: What are they and what are they good for?." Levels of Analysis in Psychopathology: Cross Disciplinary Perspectives (2020): 424-449.
 
-[13] Gordis
+[13] David Celentano and Moyses Szklo. 2018. Gordis Epidemiology (6th ed.). Elsevier, Philadelphia, PA, US.
 
 [14] Stefens: https://usp.minhabiblioteca.com.br/#/books/9788595023154/cfi/8!/4/4@0.00:0.00
 
-[15] curso de epidemiologia no e-disciplinas
+[15] curso de epidemiologia no e-disciplinas; HEP0143 (usa Gordis); 
 
 [16] COVID, IHME, and Christopher JL Murray. "Forecasting COVID-19 impact on hospital bed-days, ICU-days, ventilator-days and deaths by US state in the next 4 months." MedRxiv (2020). https://www.medrxiv.org/content/10.1101/2020.03.27.20043752v1.full
 
