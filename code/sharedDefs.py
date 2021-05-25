@@ -249,23 +249,26 @@ def checkEssayConfig(configFile):
   # insert criteria below
   if(EssayParameters['ESSAY_ESSAYID'] not in EssayParameters['ESSAY_SCENARIO']):
     check = False
-    #errors.append("Parameter {0} must respect restriction: {1}\n".format('ESSAY_ESSAYID', 'be part of the ESSAY_SCENARIO identification'))
     param_name = 'ESSAY_ESSAYID'
     restriction = 'be part of the ESSAY_SCENARIO identification'
     errors.append("Parameter {0} (set as {2}) must respect restriction: {1}\n".format(param_name, restriction, EssayParameters[param_name]))
 
   if(EssayParameters['ESSAY_CONFIGID'] not in EssayParameters['ESSAY_SCENARIO']):
     check = False
-    #errors.append("Parameter {0} must respect restriction: {1}\n".format('ESSAY_CONFIGID', 'be part of the ESSAY_SCENARIO identification'))
     param_name = 'ESSAY_CONFIGID'
     restriction = 'be part of the ESSAY_SCENARIO identification'
     errors.append("Parameter {0} (set as {2}) must respect restriction: {1}\n".format(param_name, restriction, EssayParameters[param_name]))
 
   if(EssayParameters['ESSAY_CONFIGID'].lower() not in configFile.lower()):
     check = False
-    #errors.append("Parameter {0} must respect restriction: {1}\n".format('ESSAY_CONFIGID', 'be part of the configuration filename'))
     param_name = 'ESSAY_CONFIGID'
     restriction = 'be part of the config filename'
+    errors.append("Parameter {0} (set as {2}) must respect restriction: {1}\n".format(param_name, restriction, EssayParameters[param_name]))
+
+  if(EssayParameters['PARAM_MA_WINDOW'] < 1):
+    check = False
+    param_name = 'PARAM_MA_WINDOW'
+    restriction = 'be larger than zero'
     errors.append("Parameter {0} (set as {2}) must respect restriction: {1}\n".format(param_name, restriction, EssayParameters[param_name]))
 
   # summarises errors found
@@ -306,7 +309,6 @@ def loadSourceData(sourcepath, filename, territory, popsizes):
   #  9  Recuperadosnovos
   # 10  emAcompanhamentoNovos
 
-
   # determines the fields in the raw data that will compose the source data
   sourceFields  = [0, 1, 2, 3, 6, 8]
 
@@ -324,10 +326,10 @@ def loadSourceData(sourcepath, filename, territory, popsizes):
   # parses the territory data into its component areas (i.e., territorial units)
   areas = [[s.strip() for s in area.split(ECO_FIELDSEP)] for area in territory]
 
-  # converts the raw data into the source data
-  allAreas = []
-  sourceData = []
-  for e in file2List(os.path.join(*sourcepath, filename)):
+  # converts the raw data into the source data (intermediary format)
+  relevantAreas = []
+  sourceDataByArea = []
+  for e in file2List(os.path.join(*sourcepath, filename))[1:]:
 
     buffer = [e[i] for i in sourceFields]
     for (level0, level1, level2) in areas:
@@ -339,7 +341,7 @@ def loadSourceData(sourcepath, filename, territory, popsizes):
           for k in range(3):
             if(buffer[k] == ''): buffer[k] = '*'
           newArea = '{0}, {1}, {2}'.format(buffer[0], buffer[1], buffer[2])
-          allAreas.append(newArea)
+          relevantAreas.append(newArea)
           buffer[2] = newArea
 
           for i in fieldTypes:
@@ -348,12 +350,23 @@ def loadSourceData(sourcepath, filename, territory, popsizes):
             elif(fieldTypes[i] == ECO_RAWDATEFMT):
               buffer[i] = datetime.strptime(buffer[i], fieldTypes[i])
 
-          sourceData.append(buffer[2:])
+          sourceDataByArea.append(buffer[2:])
 
-  # determines the population residing in the territory
-  N = sum([popsizes[area] for area in set(allAreas)])
+  # aggregates data from different areas by date of report
+  tmpData = defaultdict(lambda: defaultdict(int))
+  for (area, date, newCases, newDeaths) in sourceDataByArea:
+    tmpData[date][ECO_CONFIRMED] += newCases
+    tmpData[date][ECO_DECEASED]  += newDeaths
 
-  return sourceData, N
+  (timeline, date2t) = createTimeline(sourceDataByArea)
+  sourceData = []
+  for date in timeline:
+    sourceData.append((territory, date, tmpData[date][ECO_CONFIRMED], tmpData[date][ECO_DECEASED]))
+
+  # determines the population residing in the relevant areas of the territory
+  N = sum([popsizes[area] for area in set(relevantAreas)])
+
+  return sourceData, N, timeline, date2t
 
 def createTimeline(sourceData):
 
@@ -365,7 +378,7 @@ def createTimeline(sourceData):
 
 def createBoL(sourceData, timeline, date2t, outcomes, ma_window = 1):
 
-  # builds the book of life
+  # initialises the book of life
   bol = defaultdict(lambda: defaultdict(int))
   for (territory, date, newCases, newDeaths) in sourceData:
 
@@ -374,28 +387,36 @@ def createBoL(sourceData, timeline, date2t, outcomes, ma_window = 1):
     bol[date][ECO_CONFIRMED] = newCases
     bol[date][ECO_DECEASED]  = newDeaths
 
-    # estimates the number of recovered cases, using the methodology described in:
-    #   A. S. Peddireddy et al., "From 5Vs to 6Cs: Operationalizing Epidemic Data Management
-    #   with COVID-19 Surveillance," 2020 IEEE International Conference on Big Data (Big Data),
-    #   2020, pp. 1380-1387, doi: 10.1109/BigData50022.2020.9378435. (see Equation 1)
+  # applies moving average on the reported data
+  if(ma_window > 1):
+    confirmedAtDate = [bol[date][ECO_CONFIRMED] for date in timeline]
+    deceasedAtDate  = [bol[date][ECO_DECEASED]  for date in timeline]
+    for date in timeline:
+      t = date2t[date] + 1
+      bol[date][ECO_CONFIRMED] = int(np.mean(confirmedAtDate[max(0,t - ma_window):t]))
+      bol[date][ECO_DECEASED]  = int(np.mean( deceasedAtDate[max(0,t - ma_window):t]))
 
-    # It seems relevant to make explicit a number of premises adopted in this reasoning:
-    # P0: cases and deaths ensured by the authority in charge of epidemiological surveillance
-    # P1: new cases are timely reported, meaning that the onset of the disease coincides with
-    #     the date of report of a new case
-    # P2: recovered individuals are assumed to be non-infective (they stop spreading the disease)
-    # xxx should be probabilistic, but it is not; will introduce need to replicate and assess
+  # completes the book with estimates of recovered cases, using the methodology described in:
+  #   A. S. Peddireddy et al., "From 5Vs to 6Cs: Operationalizing Epidemic Data Management
+  #   with COVID-19 Surveillance," 2020 IEEE International Conference on Big Data (Big Data),
+  #   2020, pp. 1380-1387, doi: 10.1109/BigData50022.2020.9378435. (see Equation 1)
+
+  # It seems relevant to make explicit a number of premises adopted in this reasoning:
+  # P0: newly reported cases and deaths have been measured (meaning they are not estimated)
+  # P1: new cases are timely reported, meaning that the onset of the disease coincides with
+  #     the date of report of a new case
+  # P2: recovered individuals are not infective (i.e., they stop spreading the disease)
+  # P3: although the heuristics are probabilistic, the estimation is deterministic
+
+  for (territory, date, newCases, newDeaths) in sourceData:
 
     bol[date][ECO_SUSCEPTIBLE] = -newCases
     bol[date][ECO_INFECTIOUS]  =  newCases
 
-    acc = 0 #xxx reverse time
+    acc = 0.0
     for (proportionOfCases, recoveryTime) in outcomes:
       dt = timedelta(days = recoveryTime)
-      try:
-        acc += proportionOfCases * bol[date - dt][ECO_CONFIRMED]
-      except:
-        None
+      acc += proportionOfCases * bol[date - dt][ECO_CONFIRMED]
 
     bol[date][ECO_RECOVERED]  = int(acc)
 
@@ -408,9 +429,9 @@ def playBoL(bol, timeline, N):
   accs = {ECO_SUSCEPTIBLE: 0, ECO_INFECTIOUS: 0, ECO_RECOVERED: 0, ECO_DECEASED: 0, ECO_CONFIRMED: 0}
   for date in timeline:
 
-    accs[ECO_DECEASED]    += bol[date][ECO_DECEASED]
-    accs[ECO_CONFIRMED]   += bol[date][ECO_CONFIRMED]
-    accs[ECO_RECOVERED]   += bol[date][ECO_RECOVERED]
+    accs[ECO_DECEASED]   += bol[date][ECO_DECEASED]
+    accs[ECO_CONFIRMED]  += bol[date][ECO_CONFIRMED]
+    accs[ECO_RECOVERED]  += bol[date][ECO_RECOVERED]
 
     accs[ECO_INFECTIOUS]  = accs[ECO_CONFIRMED] - accs[ECO_RECOVERED] - accs[ECO_DECEASED]
     accs[ECO_SUSCEPTIBLE] = N - accs[ECO_CONFIRMED]

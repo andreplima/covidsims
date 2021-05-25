@@ -93,8 +93,7 @@ def main(configFile):
 
   # loads the dataset
   tsprint('Loading raw data')
-  (sourceData, N) = loadSourceData(param_sourcepath, param_datafile, param_territory, param_popsizes)
-  (timeline, date2t) = createTimeline(sourceData)
+  (sourceData, N, timeline, date2t) = loadSourceData(param_sourcepath, param_datafile, param_territory, param_popsizes)
   tsprint('-- {0} records have been loaded.'.format(len(sourceData)))
   print(sourceData[0])
   print(sourceData[-1])
