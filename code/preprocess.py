@@ -7,16 +7,17 @@
       IEEE International Conference on Big Data (Big Data), 2020, pp. 1380-1387,
       doi: 10.1109/BigData50022.2020.9378435. (see Equation 1)
 
-  See note: "para aferir A(t) e Rec(t) tal como apresentada na plataforma online, foi considerada a Metodologia 2".
-  translation: "The online platform assesses A(t) and Rec(t) according to Methodology 2",
+  See note in [1]:
+     "para aferir A(t) e Rec(t) tal como apresentada na plataforma online, foi considerada a Metodologia 2".
+     translation: "The online platform assesses A(t) and Rec(t) according to Methodology 2",
   with A(t)   corresponding to the number of active cases (infective individuals) at time t,
    and Rec(t) corresponding to the total number of recovered cases at time t.
 
-  Input data (the format of the input data file):
+  Input data (the fields of the input data file):
     regiao, estado, municipio, date,
     populacao, casosAcumulado, casosNovos, obitosAcumulado, obitosNovos, Recuperadosnovos, emAcompanhamentoNovos
 
-  Source data (i.e., data that is actually used to derive the surveillance data):
+  Source data (i.e., the input data that is actually used to derive the surveillance data):
     territory, date,
     newCases, newDeaths
 
@@ -69,7 +70,7 @@ def main(configFile):
   param_outcomes   = getEssayParameter('PARAM_OUTCOMES')
   param_ma_window  = getEssayParameter('PARAM_MA_WINDOW')
 
-  # ensures the essay slot (where some log files will be created) is available
+  # ensures the journal slot (where all executions are recorded) is available
   essay_beginning_ts = stimestamp()
   slot  = join('..', 'journal', essayid, configid, essay_beginning_ts)
   if(not exists(slot)): makedirs(slot)
@@ -88,25 +89,27 @@ def main(configFile):
   seed(ECO_SEED)
 
   #---------------------------------------------------------------------------------------------
-  # This is where the job is done; the rest is boilerpate
+  # This is where the job is actually done; the rest is boilerpate
   #---------------------------------------------------------------------------------------------
 
-  # loads the dataset
+  # loads the raw dataset
   tsprint('Loading raw data')
   (sourceData, N, timeline, date2t) = loadSourceData(param_sourcepath, param_datafile, param_territory, param_popsizes)
   tsprint('-- {0} records have been loaded.'.format(len(sourceData)))
-  print(sourceData[0])
-  print(sourceData[-1])
+  tsprint('-- samples:')
+  tsprint('   {0}'.format(sourceData[0]))
+  tsprint('   {0}'.format(sourceData[-1]))
 
-  # creates a "book of life", which is to be understood as a daily record of who will be sick,
-  # and recover or die, from a reference point in time that preceeds the initial reported event
+  # creates a "book of life", which is to be understood as a daily record of who will get sick,
+  # and the disease outcome (recover or die), from a reference point in time that preceeds
+  # the first reported event
   print()
   tsprint('Creating the Book of Life')
   bol = createBoL(sourceData, timeline, date2t, param_outcomes, param_ma_window)
   tsprint('-- {0} records have been created.'.format(len(bol)))
 
-  # simulates the disease dynamics based on the book of life
-  # (also computes general epidemiological stats, see [1])
+  # simulates the dynamics of the disease in the territory, based on the book of life
+  # (also computes common epidemiological stats, see [1])
   print()
   tsprint('Playing the Book of Life forward')
   (data, stats) = playBoL(bol, timeline, N)

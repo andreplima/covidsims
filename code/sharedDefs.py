@@ -15,14 +15,14 @@ ECO_DATETIME_FMT = '%Y%m%d%H%M%S' # used in logging
 ECO_RAWDATEFMT   = '%Y-%m-%d'     # used in file/memory operations
 ECO_FIELDSEP     = ','
 
-ECO_ROULETTE_SIZE = 100
-
 ECO_SUSCEPTIBLE = 'S'
 ECO_INFECTIOUS  = 'I'
 ECO_RECOVERED   = 'R'
 ECO_DECEASED    = 'D'
-
 ECO_CONFIRMED   = 'C'
+
+ECO_IBM_APPROACH  = False
+ECO_ROULETTE_SIZE = 100
 
 #-----------------------------------------------------------------------------------------------------------
 # General purpose definitions - I/O helper functions
@@ -387,7 +387,7 @@ def createBoL(sourceData, timeline, date2t, outcomes, ma_window = 1):
     bol[date][ECO_CONFIRMED] = newCases
     bol[date][ECO_DECEASED]  = newDeaths
 
-  # applies moving average on the reported data
+  # applies moving average on the reported data, if required
   if(ma_window > 1):
     confirmedAtDate = [bol[date][ECO_CONFIRMED] for date in timeline]
     deceasedAtDate  = [bol[date][ECO_DECEASED]  for date in timeline]
@@ -396,29 +396,71 @@ def createBoL(sourceData, timeline, date2t, outcomes, ma_window = 1):
       bol[date][ECO_CONFIRMED] = int(np.mean(confirmedAtDate[max(0,t - ma_window):t]))
       bol[date][ECO_DECEASED]  = int(np.mean( deceasedAtDate[max(0,t - ma_window):t]))
 
-  # completes the book with estimates of recovered cases, using the methodology described in:
-  #   A. S. Peddireddy et al., "From 5Vs to 6Cs: Operationalizing Epidemic Data Management
-  #   with COVID-19 Surveillance," 2020 IEEE International Conference on Big Data (Big Data),
-  #   2020, pp. 1380-1387, doi: 10.1109/BigData50022.2020.9378435. (see Equation 1)
+  if(not ECO_IBM_APPROACH):
 
-  # It seems relevant to make explicit a number of premises adopted in this reasoning:
-  # P0: newly reported cases and deaths have been measured (meaning they are not estimated)
-  # P1: new cases are timely reported, meaning that the onset of the disease coincides with
-  #     the date of report of a new case
-  # P2: recovered individuals are not infective (i.e., they stop spreading the disease)
-  # P3: although the heuristics are probabilistic, the estimation is deterministic
+    # completes the book with estimates of recovered cases, using the methodology described in:
+    #   A. S. Peddireddy et al., "From 5Vs to 6Cs: Operationalizing Epidemic Data Management
+    #   with COVID-19 Surveillance," 2020 IEEE International Conference on Big Data (Big Data),
+    #   2020, pp. 1380-1387, doi: 10.1109/BigData50022.2020.9378435. (see Equation 1)
 
-  for (territory, date, newCases, newDeaths) in sourceData:
+    # It seems relevant to make explicit a number of premises adopted in this reasoning:
+    # P1: newly reported cases and deaths have been measured (meaning they are not estimated)
+    # P2: new cases are timely reported, meaning that the onset of the disease coincides with
+    #     the date of report of a new case
+    # P3: recovered individuals are not infective (i.e., they stop spreading the disease)
+    # P4: all deceased individuals were previously reported as confirmed cases
+    # P5: although the adopted heuristics are probabilistic, the estimation is deterministic
 
-    bol[date][ECO_SUSCEPTIBLE] = -newCases
-    bol[date][ECO_INFECTIOUS]  =  newCases
+    for (territory, date, newCases, newDeaths) in sourceData:
 
-    acc = 0.0
-    for (proportionOfCases, recoveryTime) in outcomes:
-      dt = timedelta(days = recoveryTime)
-      acc += proportionOfCases * bol[date - dt][ECO_CONFIRMED]
+      bol[date][ECO_SUSCEPTIBLE] = -newCases
+      bol[date][ECO_INFECTIOUS]  =  newCases
 
-    bol[date][ECO_RECOVERED]  = int(acc)
+      acc = 0.0
+      for (proportionOfCases, meanRecoveryTime, _) in outcomes:
+        dt = timedelta(days = meanRecoveryTime)
+        acc += proportionOfCases * bol[date - dt][ECO_CONFIRMED]
+
+      bol[date][ECO_RECOVERED] = max(0, int(acc) - bol[date][ECO_DECEASED])
+
+  else:
+
+    # completes the book with estimates of recovered cases using a micro model
+    # this approach is based on the same premises above, except P4:
+    # P5: estimation follows a probabilistic approach, in-line with the adopted heuristics
+
+    # builds a roulette from the case outcome stats
+    (proportionOfCases, meanRecoveryTime, rsdRecoveryTime) = zip(*outcomes)
+    noc = len(proportionOfCases) # the number of categories of case severity
+    thresholds = [int(sum(proportionOfCases[:k+1] * ECO_ROULETTE_SIZE)) for k in range(noc)]
+    roulette = {}
+    for pocket in range(ECO_ROULETTE_SIZE + 1):
+      k = 0
+      while pocket > thresholds[k]: k += 1
+      mu = meanRecoveryTime[k]
+      sd = mu * rsdRecoveryTime[k]
+      roulette[pocket] = max(0, int(np.random.normal(mu, sd, 1)[0]))
+
+    def spinWheel():
+      pocket = np.random.randint(0, ECO_ROULETTE_SIZE)
+      return roulette[pocket]
+
+    for (territory, date, newCases, newDeaths) in sourceData:
+
+      bol[date][ECO_SUSCEPTIBLE] = -newCases
+      bol[date][ECO_INFECTIOUS]  =  newCases
+
+      # (over)estimates the number of recovered cases (i.e., everyone eventually recovers)
+      for _ in range(newCases):
+        dt = timedelta(days = spinWheel())
+        bol[date + dt][ECO_RECOVERED] += 1
+
+    # adjusts the estimate of recovered cases to account for negative outcomes (deceased)
+    for date in timeline:
+      if(bol[date][ECO_RECOVERED] > bol[date][ECO_DECEASED]):
+        bol[date][ECO_RECOVERED] -= bol[date][ECO_DECEASED]
+      else:
+        bol[date][ECO_RECOVERED] = 0
 
   return bol
 
