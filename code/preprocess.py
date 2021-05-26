@@ -71,7 +71,7 @@ def main(configFile):
 
   # ensures the essay slot (where some log files will be created) is available
   essay_beginning_ts = stimestamp()
-  slot  = join('..', 'essays', essayid, configid, essay_beginning_ts)
+  slot  = join('..', 'journal', essayid, configid, essay_beginning_ts)
   if(not exists(slot)): makedirs(slot)
 
   # adjusts the output directory to account for essay and config IDs
