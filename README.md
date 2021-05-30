@@ -2,7 +2,9 @@
 
 To run the preprocessing pipeline:
 
-python preprocess.py ../configs/T01/SP/preprocess_T01_SP.cfg
+*python preprocess.py ../configs/T01/SP/preprocess_T01_SP.cfg*
+
+---
 
 Config file must encode:
 | Parameter | Description |
