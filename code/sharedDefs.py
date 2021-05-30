@@ -78,14 +78,14 @@ def file2List(filename, separator = ',', erase = '"', _encoding = 'iso-8859-1'):
   return(contents)
 
 def dict2text(d, header, mask = '{0}\t{1}'):
-	
-	content = [mask.format(*header)]
-	
-	for key in sorted(d):
-		content.append(mask.format(key, d[key]))
-		
-	return '\n'.join(content)
-	
+
+  content = [mask.format(*header)]
+
+  for key in sorted(d):
+    content.append(mask.format(key, d[key]))
+
+  return '\n'.join(content)
+
 def saveAsText(content, filename, _encoding='utf-8'):
   f = codecs.open(filename, 'w', encoding=_encoding)
   f.write(content)
@@ -279,6 +279,13 @@ def checkEssayConfig(configFile):
     restriction = 'be larger than zero'
     errors.append("Parameter {0} (set as {2}) must respect restriction: {1}\n".format(param_name, restriction, EssayParameters[param_name]))
 
+  opts = ['Peddireddy', 'IB-forward']
+  if(EssayParameters['PARAM_CORE_MODEL'] not in opts):
+    check = False
+    param_name = 'PARAM_CORE_MODEL'
+    restriction = 'be one of {0}'.format(opts)
+    errors.append("Parameter {0} (set as {2}) must respect restriction: {1}\n".format(param_name, restriction, EssayParameters[param_name]))
+
   # summarises errors found
   if(len(errors) > 0):
     separator = "=============================================================================================================================\n"
@@ -466,10 +473,10 @@ def createBoL(sourceData, timeline, date2t, outcomes, ma_window = 1, coreModel =
 
     # adjusts the estimate of recovered cases to account for terminal outcomes (deceased)
     for date in timeline:
-      
+
       bol[date][ECO_RECOVERED] -= bol[date][ECO_DECEASED]
       bol[date][ECO_INFECTIOUS] = bol[date][ECO_CONFIRMED] - bol[date][ECO_RECOVERED] - bol[date][ECO_DECEASED]
-      
+
       if(maskErrors and bol[date][ECO_RECOVERED] < 0):
         bol[date][ECO_INFECTIOUS] += bol[date][ECO_RECOVERED]
         bol[date][ECO_RECOVERED]   = 0
@@ -558,6 +565,7 @@ def playBoL(bol, N, timeline):
                                         'must be larger than zero'))
 
   # computes additional epidemiological stats
+  # xxx to be developed
   stats = {}
 
   return (data, violations, stats)

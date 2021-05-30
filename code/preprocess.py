@@ -17,6 +17,7 @@
   Processed data:
     territory, date,
     S(t) :- number of susceptible individuals    -- estimated as N - I(t) - R(t) - D(t)
+    C(t) :- number of confirmed casesd at time t -- measured by agents in charge of surveillance
     I(t) :- number of active cases at time t     -- estimated as proposed in [1]
     R(t) :- number of recovered cases at time t  -- estimated as proposed in [1]
     D(t) :- number of deaths occurred at time t  -- measured by agents in charge of surveillance
