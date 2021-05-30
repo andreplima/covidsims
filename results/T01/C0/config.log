@@ -1,0 +1,25 @@
+[20210525092202] Running essay with specs recovered from [..\configs\t01\c0\preprocess_T01_C0.cfg]
+
+[20210525092202] Processing essay configuration file [..\configs\t01\c0\preprocess_T01_C0.cfg]
+ESSAY_CONFIGID : C0 (as <class 'str'>)
+ESSAY_ESSAYID : T01 (as <class 'str'>)
+ESSAY_LABEL : Surveillance data for C0 (Testing multiple cities) (as <class 'str'>)
+ESSAY_RUNS : 1 (as <class 'int'>)
+ESSAY_SCENARIO : Essay T01, Config C0 - Testing multiple cities (as <class 'str'>)
+PARAM_DATAFILE : test_dataset_C0.csv (as <class 'str'>)
+PARAM_MA_WINDOW : 0 (as <class 'int'>)
+PARAM_OUTCOMES : [(0.81, 14), (0.14, 28), (0.05, 42)] (as <class 'list'>)
+PARAM_POPSIZES : {'Sudeste, SP, City1': 150000, 'Sudeste, SP, City2': 150000, 'Sudeste, SP, City3': 150000} (as <class 'dict'>)
+PARAM_SOURCEPATH : ['C:\\USERS\\ANDRE\\', 'Task Stage', 'Task - covidsims', 'covidsims', 'datasets'] (as <class 'list'>)
+PARAM_TARGETPATH : ['C:\\USERS\\ANDRE\\', 'Task Stage', 'Task - covidsims', 'covidsims', 'results'] (as <class 'list'>)
+PARAM_TERRITORY : ['Sudeste, SP, City1'] (as <class 'list'>)
+
+[20210525092202] Loading raw data
+[20210525092202] -- 100 records have been loaded.
+[20210525092202] Creating the Book of Life
+[20210525092202] -- 142 records have been created.
+[20210525092202] Playing the Book of Life forward
+[20210525092202] -- 100 records have been created.
+[20210525092202] Saving the results
+[20210525092202] Results and inspection logs were saved in [C:\USERS\ANDRE\Task Stage\Task - covidsims\covidsims\results\T01\C0]
+[20210525092202] Finished essay with specs recovered from [..\configs\t01\c0\preprocess_T01_C0.cfg]

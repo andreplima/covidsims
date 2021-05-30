@@ -1,0 +1,30 @@
+[20210530121813] Running essay with specs recovered from [..\configs\T01\sp\preprocess_T01_SP.cfg]
+
+[20210530121813] Processing essay configuration file [..\configs\T01\sp\preprocess_T01_SP.cfg]
+ESSAY_CONFIGID : SP (as <class 'str'>)
+ESSAY_ESSAYID : T01 (as <class 'str'>)
+ESSAY_LABEL : Surveillance data for SP (default settings for a SIRD model) (as <class 'str'>)
+ESSAY_RUNS : 1 (as <class 'int'>)
+ESSAY_SCENARIO : Essay T01, Config SP - Surveillance data for SP (as <class 'str'>)
+PARAM_CORE_MODEL : Peddireddy (as <class 'str'>)
+PARAM_DATAFILE : dados_diarios_estado_SP.csv (as <class 'str'>)
+PARAM_MASK_ERRORS : True (as <class 'bool'>)
+PARAM_MA_WINDOW : 7 (as <class 'int'>)
+PARAM_OUTCOMES : [(0.81, 14, 0.05), (0.14, 28, 0.06), (0.05, 42, 0.1)] (as <class 'list'>)
+PARAM_POPSIZES : {'Sudeste, SP, *': 46289333} (as <class 'dict'>)
+PARAM_SOURCEPATH : ['C:\\USERS\\ANDRE\\', 'Task Stage', 'Task - covidsims', 'covidsims', 'datasets'] (as <class 'list'>)
+PARAM_TARGETPATH : ['C:\\USERS\\ANDRE\\', 'Task Stage', 'Task - covidsims', 'covidsims', 'results'] (as <class 'list'>)
+PARAM_TERRITORY : ['Sudeste, SP, *'] (as <class 'list'>)
+
+[20210530121813] Loading raw data
+[20210530121813] -- 451 records have been loaded.
+[20210530121813] -- samples:
+[20210530121813]    (['Sudeste, SP, *'], datetime.datetime(2020, 2, 25, 0, 0), 0, 0)
+[20210530121813]    (['Sudeste, SP, *'], datetime.datetime(2021, 5, 20, 0, 0), 17936, 585)
+[20210530121813] Creating the Book of Life
+[20210530121813] -- 493 records have been created.
+[20210530121813] Playing the Book of Life forward
+[20210530121813] -- 452 records have been created.
+[20210530121813] Saving the results
+[20210530121813] Results and inspection logs were saved in [C:\USERS\ANDRE\Task Stage\Task - covidsims\covidsims\results\T01\SP]
+[20210530121813] Finished essay with specs recovered from [..\configs\T01\sp\preprocess_T01_SP.cfg]
