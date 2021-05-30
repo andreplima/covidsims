@@ -1,4 +1,4 @@
-# covidsims - Simulating COVID-19 spread dynamics in Brazil
+# covidsims - Simulating COVID-19 dynamics in Brazil
 
 To run the preprocessing pipeline:
 
