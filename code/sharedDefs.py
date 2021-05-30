@@ -21,7 +21,6 @@ ECO_RECOVERED   = 'R'
 ECO_DECEASED    = 'D'
 ECO_CONFIRMED   = 'C'
 
-ECO_IBM_APPROACH  = False
 ECO_ROULETTE_SIZE = 100
 
 #-----------------------------------------------------------------------------------------------------------
@@ -70,14 +69,23 @@ def file2List(filename, separator = ',', erase = '"', _encoding = 'iso-8859-1'):
   f = codecs.open(filename, 'r', encoding=_encoding)
   if(len(erase) > 0):
     for buffer in f:
-      contents.append(buffer.replace(erase, '').rstrip().split(separator))
+      contents.append(buffer.replace(erase, '').strip().split(separator))
   else:
     for buffer in f:
-      contents.append(buffer.rstrip().split(separator))
+      contents.append(buffer.strip().split(separator))
   f.close()
 
   return(contents)
 
+def dict2text(d, header, mask = '{0}\t{1}'):
+	
+	content = [mask.format(*header)]
+	
+	for key in sorted(d):
+		content.append(mask.format(key, d[key]))
+		
+	return '\n'.join(content)
+	
 def saveAsText(content, filename, _encoding='utf-8'):
   f = codecs.open(filename, 'w', encoding=_encoding)
   f.write(content)
@@ -129,7 +137,7 @@ def setEssayParameter(param, value):
   so_param = param.upper()
 
   # boolean-valued parameters
-  if(so_param in ['PARAM_new']):
+  if(so_param in ['PARAM_MASK_ERRORS']):
 
     so_value = eval(value[0]) if isinstance(value, list) else bool(value)
 
@@ -162,7 +170,7 @@ def getEssayParameter(param):
 def overrideEssayParameter(param):
 
   if(param in os.environ):
-    param_value = int(os.environ[param])
+    param_value = os.environ[param]
     tsprint('-- option {0} replaced from {1} to {2} (environment variable setting)'.format(param,
                                                                                            getEssayParameter(param),
                                                                                            param_value))
@@ -294,25 +302,17 @@ def listEssayConfig():
 # Problem specific definitions - preprocessing surveillance data
 #-------------------------------------------------------------------------------------------------------------------------------------------
 
-def loadSourceData(sourcepath, filename, territory, popsizes):
+def rint(val):
+  return int(round(val, 0))
 
-  #- field order in the raw data
-  #  0  regiao
-  #  1  estado
-  #  2  municipio
-  #  3  data
-  #  4  populacao
-  #  5  casosAcumulado
-  #  6  casosNovos
-  #  7  obitosAcumulado
-  #  8  obitosNovos
-  #  9  Recuperadosnovos
-  # 10  emAcompanhamentoNovos
+def loadSourceData(sourcepath, filename, territory, popsizes): #xxx use the header to locate the fields
 
-  # determines the fields in the raw data that will compose the source data
-  sourceFields  = [0, 1, 2, 3, 6, 8]
+  # maps the fields in the raw data that will compose the source data
+  content = file2List(os.path.join(*sourcepath, filename))
+  header  = content[0]
+  sourceFields  = [header.index(field) for field in ['regiao', 'estado', 'municipio', 'data', 'casosNovos', 'obitosNovos']]
 
-  #- field order in the source data
+  #- order of the sourceFields:
   #  0  regiao
   #  1  estado
   #  2  municipio
@@ -320,7 +320,7 @@ def loadSourceData(sourcepath, filename, territory, popsizes):
   #  4  casosNovos
   #  5  obitosNovos
 
-  # determines the data types into which source data fields must be converted
+  # determines the data types into which source data fields must be cast
   fieldTypes    = {3: ECO_RAWDATEFMT, 4: 'int', 5: 'int'}
 
   # parses the territory data into its component areas (i.e., territorial units)
@@ -329,7 +329,7 @@ def loadSourceData(sourcepath, filename, territory, popsizes):
   # converts the raw data into the source data (intermediary format)
   relevantAreas = []
   sourceDataByArea = []
-  for e in file2List(os.path.join(*sourcepath, filename))[1:]:
+  for e in content[1:]:
 
     buffer = [e[i] for i in sourceFields]
     for (level0, level1, level2) in areas:
@@ -376,7 +376,7 @@ def createTimeline(sourceData):
 
   return (timeline, date2t)
 
-def createBoL(sourceData, timeline, date2t, outcomes, ma_window = 1):
+def createBoL(sourceData, timeline, date2t, outcomes, ma_window = 1, coreModel = 'Peddireddy', maskErrors = True):
 
   # initialises the book of life
   bol = defaultdict(lambda: defaultdict(int))
@@ -393,10 +393,11 @@ def createBoL(sourceData, timeline, date2t, outcomes, ma_window = 1):
     deceasedAtDate  = [bol[date][ECO_DECEASED]  for date in timeline]
     for date in timeline:
       t = date2t[date] + 1
-      bol[date][ECO_CONFIRMED] = int(np.mean(confirmedAtDate[max(0,t - ma_window):t]))
-      bol[date][ECO_DECEASED]  = int(np.mean( deceasedAtDate[max(0,t - ma_window):t]))
+      bol[date][ECO_CONFIRMED] = rint(np.mean(confirmedAtDate[max(0, t - ma_window):t]))
+      bol[date][ECO_DECEASED]  = rint(np.mean( deceasedAtDate[max(0, t - ma_window):t]))
 
-  if(not ECO_IBM_APPROACH):
+  roulette = {}
+  if(coreModel == 'Peddireddy'):
 
     # completes the book with estimates of recovered cases, using the methodology described in:
     #   A. S. Peddireddy et al., "From 5Vs to 6Cs: Operationalizing Epidemic Data Management
@@ -404,42 +405,51 @@ def createBoL(sourceData, timeline, date2t, outcomes, ma_window = 1):
     #   2020, pp. 1380-1387, doi: 10.1109/BigData50022.2020.9378435. (see Equation 1)
 
     # It seems relevant to make explicit a number of premises adopted in this reasoning:
+    # P0: the adopted model describes the disease dynamics at the population level (macro-model)
     # P1: newly reported cases and deaths have been measured (meaning they are not estimated)
     # P2: new cases are timely reported, meaning that the onset of the disease coincides with
-    #     the date of report of a new case
+    #     the date of report of a new case. Thus, the actual mean recovery time (i.e., the period
+    #     between the onset of the disease and its resolution) coincides with the median reported
+    #     recovery time (i.e., the period between case confirmation and its resolution)
     # P3: recovered individuals are not infective (i.e., they stop spreading the disease)
     # P4: all deceased individuals were previously reported as confirmed cases
-    # P5: although the adopted heuristics are probabilistic, the estimation is deterministic
+    # P5: although the available heuristics are probabilistic, the estimation is deterministic
+    # P6: estimate of new recovered cases at time t uses measured data prior to t (backward)
 
     for (territory, date, newCases, newDeaths) in sourceData:
 
-      bol[date][ECO_SUSCEPTIBLE] = -newCases
-      bol[date][ECO_INFECTIOUS]  =  newCases
+      bol[date][ECO_SUSCEPTIBLE] = -bol[date][ECO_CONFIRMED]
 
       acc = 0.0
       for (proportionOfCases, meanRecoveryTime, _) in outcomes:
         dt = timedelta(days = meanRecoveryTime)
         acc += proportionOfCases * bol[date - dt][ECO_CONFIRMED]
 
-      bol[date][ECO_RECOVERED] = max(0, int(acc) - bol[date][ECO_DECEASED])
+      bol[date][ECO_RECOVERED]  = rint(acc) - bol[date][ECO_DECEASED]
+      bol[date][ECO_INFECTIOUS] = bol[date][ECO_CONFIRMED] - bol[date][ECO_RECOVERED] - bol[date][ECO_DECEASED]
 
-  else:
+      if(maskErrors and bol[date][ECO_RECOVERED] < 0):
+        bol[date][ECO_INFECTIOUS] += bol[date][ECO_RECOVERED]
+        bol[date][ECO_RECOVERED]   = 0
 
-    # completes the book with estimates of recovered cases using a micro model
-    # this approach is based on the same premises above, except P4:
-    # P5: estimation follows a probabilistic approach, in-line with the adopted heuristics
+  elif(coreModel == 'IB-forward'):
+
+    # completes the book with estimates of recovered cases using an individual-based model
+    # this approach is based on the same premises above, except:
+    # P0: the adopted model describes the disease dynamics at the individual level (micro-model)
+    # P5: estimation follows a probabilistic approach, in-line with the available heuristics
+    # P6: new confirmed cases at time t will become recovered cases at later time (forward)
 
     # builds a roulette from the case outcome stats
     (proportionOfCases, meanRecoveryTime, rsdRecoveryTime) = zip(*outcomes)
-    noc = len(proportionOfCases) # the number of categories of case severity
-    thresholds = [int(sum(proportionOfCases[:k+1] * ECO_ROULETTE_SIZE)) for k in range(noc)]
-    roulette = {}
+    nlcs = len(proportionOfCases) # the number of levels of case severity
+    thresholds = [int(sum(proportionOfCases[:k+1] * ECO_ROULETTE_SIZE)) for k in range(nlcs)]
     for pocket in range(ECO_ROULETTE_SIZE + 1):
       k = 0
       while pocket > thresholds[k]: k += 1
       mu = meanRecoveryTime[k]
       sd = mu * rsdRecoveryTime[k]
-      roulette[pocket] = max(0, int(np.random.normal(mu, sd, 1)[0]))
+      roulette[pocket] = int(np.random.normal(mu, sd, 1)[0])
 
     def spinWheel():
       pocket = np.random.randint(0, ECO_ROULETTE_SIZE)
@@ -447,27 +457,37 @@ def createBoL(sourceData, timeline, date2t, outcomes, ma_window = 1):
 
     for (territory, date, newCases, newDeaths) in sourceData:
 
-      bol[date][ECO_SUSCEPTIBLE] = -newCases
-      bol[date][ECO_INFECTIOUS]  =  newCases
+      bol[date][ECO_SUSCEPTIBLE] = -bol[date][ECO_CONFIRMED]
 
       # (over)estimates the number of recovered cases (i.e., everyone eventually recovers)
       for _ in range(newCases):
         dt = timedelta(days = spinWheel())
         bol[date + dt][ECO_RECOVERED] += 1
 
-    # adjusts the estimate of recovered cases to account for negative outcomes (deceased)
+    # adjusts the estimate of recovered cases to account for terminal outcomes (deceased)
     for date in timeline:
-      if(bol[date][ECO_RECOVERED] > bol[date][ECO_DECEASED]):
-        bol[date][ECO_RECOVERED] -= bol[date][ECO_DECEASED]
-      else:
-        bol[date][ECO_RECOVERED] = 0
+      
+      bol[date][ECO_RECOVERED] -= bol[date][ECO_DECEASED]
+      bol[date][ECO_INFECTIOUS] = bol[date][ECO_CONFIRMED] - bol[date][ECO_RECOVERED] - bol[date][ECO_DECEASED]
+      
+      if(maskErrors and bol[date][ECO_RECOVERED] < 0):
+        bol[date][ECO_INFECTIOUS] += bol[date][ECO_RECOVERED]
+        bol[date][ECO_RECOVERED]   = 0
 
-  return bol
+  else:
+    raise ValueError
 
-def playBoL(bol, timeline, N):
+  return bol, roulette
+
+def playBoL(bol, N, timeline):
+
+  template = '{0}\t{1}\t{2}\t{3}\t{4}'
+  header = template.format('File', 'Date', 'Variable', 'Value', 'Description')
+  violations = [header]
+  d1 = timedelta(days = 1)
 
   # creates the accumulated curves
-  data = {}
+  data = defaultdict(lambda: defaultdict(int))
   accs = {ECO_SUSCEPTIBLE: 0, ECO_INFECTIOUS: 0, ECO_RECOVERED: 0, ECO_DECEASED: 0, ECO_CONFIRMED: 0}
   for date in timeline:
 
@@ -480,19 +500,76 @@ def playBoL(bol, timeline, N):
 
     data[date] = copy(accs)
 
-    # computes additional epidemiological stats
-    stats = {}
+    # checks the presence of violations in the generated data
+    if(bol[date][ECO_DECEASED] < 0):
+      violations.append(template.format('daily_changes',
+                                        date.strftime(ECO_RAWDATEFMT),
+                                        '∆D(t)',
+                                        bol[date][ECO_DECEASED],
+                                        'must be larger than zero'))
 
-  return (data, stats)
+    if(bol[date][ECO_CONFIRMED] < 0):
+      violations.append(template.format('daily_changes',
+                                        date.strftime(ECO_RAWDATEFMT),
+                                        '∆C(t)',
+                                        bol[date][ECO_CONFIRMED],
+                                        'must be larger than zero'))
+
+    if(bol[date][ECO_RECOVERED] < 0):
+      violations.append(template.format('daily_changes',
+                                        date.strftime(ECO_RAWDATEFMT),
+                                        '∆R(t)',
+                                        bol[date][ECO_RECOVERED],
+                                        'must be larger than zero'))
+
+    if(bol[date][ECO_INFECTIOUS] != bol[date][ECO_CONFIRMED] - bol[date][ECO_RECOVERED] - bol[date][ECO_DECEASED]):
+      violations.append(template.format('daily_changes',
+                                        date.strftime(ECO_RAWDATEFMT),
+                                        '∆I(t)',
+                                        bol[date][ECO_INFECTIOUS],
+                                        'must be equal to ∆C(t) - ∆R(t) - ∆D(t)'))
+
+    if(bol[date][ECO_RECOVERED] != data[date][ECO_RECOVERED] - data[date - d1][ECO_RECOVERED]):
+      violations.append(template.format('daily_change',
+                                        date.strftime(ECO_RAWDATEFMT),
+                                        '∆R(t)',
+                                        bol[date][ECO_RECOVERED],
+                                        'must be equal to R(t) - R(t-1)'))
+
+    if(bol[date][ECO_INFECTIOUS] != data[date][ECO_INFECTIOUS] - data[date - d1][ECO_INFECTIOUS]):
+      violations.append(template.format('daily_change',
+                                        date.strftime(ECO_RAWDATEFMT),
+                                        '∆I(t)',
+                                        data[date][ECO_INFECTIOUS],
+                                        'must be equal to I(t) - I(t-1)'))
+
+    if(data[date][ECO_RECOVERED] < 0):
+      violations.append(template.format('surveillance',
+                                        date.strftime(ECO_RAWDATEFMT),
+                                        'R(t)',
+                                        data[date][ECO_RECOVERED],
+                                        'must be larger than zero'))
+
+    if(data[date][ECO_INFECTIOUS] < 0):
+      violations.append(template.format('surveillance',
+                                        date.strftime(ECO_RAWDATEFMT),
+                                        'I(t)',
+                                        data[date][ECO_INFECTIOUS],
+                                        'must be larger than zero'))
+
+  # computes additional epidemiological stats
+  stats = {}
+
+  return (data, violations, stats)
 
 def bol2content(territory, bol, N, timeline, date2t, derivatives = False):
 
   # converts content to textual format
-  buffer_mask = '{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}'
+  buffer_mask = '{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}'
   if(derivatives):
-    header = buffer_mask.format('Territory', 'Date', 't', 'N', '∆S(t)', '∆I(t)', '∆R(t)', '∆D(t)')
+    header = buffer_mask.format('Territory', 'Date', 't', 'N', '∆S(t)', '∆C(t)', '∆I(t)', '∆R(t)', '∆D(t)')
   else:
-    header = buffer_mask.format('Territory', 'Date', 't', 'N', 'S(t)', 'I(t)', 'R(t)', 'D(t)')
+    header = buffer_mask.format('Territory', 'Date', 't', 'N', 'S(t)', 'C(t)', 'I(t)', 'R(t)', 'D(t)')
 
   content = [header]
   for date in timeline:
@@ -502,6 +579,7 @@ def bol2content(territory, bol, N, timeline, date2t, derivatives = False):
                                 date2t[date],
                                 N,
                                 bol[date][ECO_SUSCEPTIBLE],
+                                bol[date][ECO_CONFIRMED],
                                 bol[date][ECO_INFECTIOUS],
                                 bol[date][ECO_RECOVERED],
                                 bol[date][ECO_DECEASED])

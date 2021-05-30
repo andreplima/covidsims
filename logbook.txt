@@ -7,7 +7,7 @@ SIAM Chapter ICMC - Resources
 	What is the problem being approached by the group? {OBJECTIVE}
 	 To develop an epidemiological model to inform the selection of interventions to contain COVID-19 spread in the Brazilian territory. In other words, to develop a model to assign a relative measure of efficiency to available interventions.
 
-	Why are we spending our time approaching this problem? {MOTIVATION}
+	Why are we spending our time to investigate this problem? {MOTIVATION}
 		To contribute to ongoing efforts to ameliorate socioeconomic impacts of COVID-19.
 
 	Materials: health surveillance data obtained from an online platform [1]. {CONFIRM}

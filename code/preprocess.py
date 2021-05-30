@@ -1,24 +1,17 @@
 """
-  This script uses a methodology described in [1] to derive SIRD-like epidemiological surveillance data from a
-  dataset of daily records of new cases and new deaths. The methodology is further detailed in [2].
+  This script uses a methodology described in [1] to derive SIRD-like surveillance data from a
+  dataset of daily records of new cases and new deaths.
 
-  [1] https://www.viser.com.br/covid-19/sp-covid-info-tracker
-  [2] A. S. Peddireddy et al., "From 5Vs to 6Cs: Operationalizing Epidemic Data Management with COVID-19 Surveillance,"
+  [1] A. S. Peddireddy et al., "From 5Vs to 6Cs: Operationalizing Epidemic Data Management with COVID-19 Surveillance,"
       IEEE International Conference on Big Data (Big Data), 2020, pp. 1380-1387,
       doi: 10.1109/BigData50022.2020.9378435. (see Equation 1)
-
-  See note in [1]:
-     "para aferir A(t) e Rec(t) tal como apresentada na plataforma online, foi considerada a Metodologia 2".
-     translation: "The online platform assesses A(t) and Rec(t) according to Methodology 2",
-  with A(t)   corresponding to the number of active cases (infective individuals) at time t,
-   and Rec(t) corresponding to the total number of recovered cases at time t.
 
   Input data (the fields of the input data file):
     regiao, estado, municipio, date,
     populacao, casosAcumulado, casosNovos, obitosAcumulado, obitosNovos, Recuperadosnovos, emAcompanhamentoNovos
 
   Source data (i.e., the input data that is actually used to derive the surveillance data):
-    territory, date,
+    territory (= regiao + estado + municipio), date,
     newCases, newDeaths
 
   Processed data:
@@ -41,7 +34,7 @@ from random     import seed
 from sharedDefs import ECO_SEED
 from sharedDefs import setupEssayConfig, getEssayParameter, setEssayParameter, overrideEssayParameter
 from sharedDefs import getMountedOn, serialise, saveAsText, stimestamp, tsprint, saveLog
-from sharedDefs import loadSourceData, createTimeline, createBoL, bol2content, playBoL
+from sharedDefs import loadSourceData, createTimeline, createBoL, bol2content, dict2text, playBoL
 
 def main(configFile):
 
@@ -62,13 +55,20 @@ def main(configFile):
   replicas = getEssayParameter('ESSAY_RUNS')
 
   # recovers parameters related to the problem instance
-  param_sourcepath = getEssayParameter('PARAM_SOURCEPATH')
-  param_targetpath = getEssayParameter('PARAM_TARGETPATH')
-  param_datafile   = getEssayParameter('PARAM_DATAFILE')
-  param_territory  = getEssayParameter('PARAM_TERRITORY')
-  param_popsizes   = getEssayParameter('PARAM_POPSIZES')
-  param_outcomes   = getEssayParameter('PARAM_OUTCOMES')
-  param_ma_window  = getEssayParameter('PARAM_MA_WINDOW')
+  param_sourcepath  = getEssayParameter('PARAM_SOURCEPATH')
+  param_targetpath  = getEssayParameter('PARAM_TARGETPATH')
+  param_datafile    = getEssayParameter('PARAM_DATAFILE')
+  param_territory   = getEssayParameter('PARAM_TERRITORY')
+  param_popsizes    = getEssayParameter('PARAM_POPSIZES')
+  param_outcomes    = getEssayParameter('PARAM_OUTCOMES')
+  param_ma_window   = getEssayParameter('PARAM_MA_WINDOW')
+  param_core_model  = getEssayParameter('PARAM_CORE_MODEL')
+  param_mask_errors = getEssayParameter('PARAM_MASK_ERRORS')
+
+  # overrides parameters recovered from the config file with environment variables
+  param_ma_window   = overrideEssayParameter('PARAM_MA_WINDOW')
+  param_core_model  = overrideEssayParameter('PARAM_CORE_MODEL')
+  param_mask_errors = overrideEssayParameter('PARAM_MASK_ERRORS')
 
   # ensures the journal slot (where all executions are recorded) is available
   essay_beginning_ts = stimestamp()
@@ -105,22 +105,30 @@ def main(configFile):
   # the first reported event
   print()
   tsprint('Creating the Book of Life')
-  bol = createBoL(sourceData, timeline, date2t, param_outcomes, param_ma_window)
+  bol, roulette = createBoL(sourceData, timeline, date2t,
+                            param_outcomes, param_ma_window, param_core_model, param_mask_errors)
   tsprint('-- {0} records have been created.'.format(len(bol)))
 
   # simulates the dynamics of the disease in the territory, based on the book of life
   # (also computes common epidemiological stats, see [1])
   print()
   tsprint('Playing the Book of Life forward')
-  (data, stats) = playBoL(bol, timeline, N)
+  (data, violations, stats) = playBoL(bol, N, timeline)
   tsprint('-- {0} records have been created.'.format(len(data)))
 
   # saves the results
   print()
   tsprint('Saving the results')
+
   serialise(sourceData, join(*param_targetpath, 'sourceData'))
+  serialise(timeline,   join(*param_targetpath, 'timeline'))
+  serialise(date2t,     join(*param_targetpath, 'date2t'))
   serialise(dict(bol),  join(*param_targetpath, 'bol'))
-  serialise(data, join(*param_targetpath, 'data'))
+  serialise(roulette,   join(*param_targetpath, 'roulette'))
+  serialise(dict(data), join(*param_targetpath, 'data'))
+
+  saveAsText('\n'.join(violations),                                         join(*param_targetpath, 'violations.csv'))
+  saveAsText(dict2text(roulette, ['Pocket', 'Days']),                       join(*param_targetpath, 'roulette.csv'))
   saveAsText(bol2content(param_territory, bol,  N, timeline, date2t, True), join(*param_targetpath, 'daily_changes.csv'))
   saveAsText(bol2content(param_territory, data, N, timeline, date2t),       join(*param_targetpath, 'surveillance.csv'))
 
