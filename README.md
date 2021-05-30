@@ -7,6 +7,11 @@ python preprocess.py ..\configs\T01\SP\preprocess_T01_SP.cfg
 
 Config file encodes:
 
+| Syntax | Description |
+| ----------- | ----------- |
+| Header | Title |
+| Paragraph | Text |
+
 PARAM_SOURCEPATH  : directory where the raw datafile is stored
 
 PARAM_TARGETPATH  : directory where results will be stored
