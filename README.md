@@ -27,4 +27,4 @@ Several UTF-8, flat files with tab-separated fields are created:
 |`roulette.csv`|File describing the roulette employed to assign the recovery time to an arbitrary case|
 
 
-The resulting data can be visualised with Excel; a template is available at ..\assets\Helper_SP.xlsx
+The resulting data can be visualised with Excel; a template is available at ./assets/Helper_SP.xlsx
