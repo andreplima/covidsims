@@ -12,6 +12,7 @@ Config file must encode:
 |`PARAM_SOURCEPATH`|directory where the raw datafile is stored, as a list|
 |`PARAM_TARGETPATH`|directory where results will be stored, as a list|
 |`PARAM_DATAFILE`|the name of the raw datafile|
+|`PARAM_DATAFIELDS`|list with the fields that correspond to region, state, city, date, #newCases, and #newDeaths, using the strings in the header of `PARAM_DATAFILE`|
 |`PARAM_TERRITORY`|list of areas that compose the territory under analysis (i.e., territorial units)|
 |`PARAM_POPSIZES`|dictionary of population sizes per territorial unit|
 |`PARAM_OUTCOMES`|list of (`p`, `mu`, `rsd`) tuples, with `p` as the share of cases with some outcome category (e.g., cases with mild to moderate progression), `mu` is the mean recovery time of cases (in days), and `rsd` is the [relative standard deviation](https://en.wikipedia.org/wiki/Coefficient_of_variation) of recovery time|

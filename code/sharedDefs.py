@@ -63,7 +63,7 @@ def deserialise(name):
   f.close()
   return obj
 
-def file2List(filename, separator = ',', erase = '"', _encoding = 'iso-8859-1'):
+def file2List(filename, separator = ',', erase = '"', _encoding = 'utf-8'):
 
   contents = []
   f = codecs.open(filename, 'r', encoding=_encoding)
@@ -153,7 +153,7 @@ def setEssayParameter(param, value):
 
   # parameters that requires eval expansion
   elif(so_param in ['PARAM_SOURCEPATH', 'PARAM_TARGETPATH', 'PARAM_TERRITORY', 'PARAM_POPSIZES',
-                    'PARAM_OUTCOMES']):
+                    'PARAM_OUTCOMES', 'PARAM_DATAFIELDS']):
 
     so_value = value
 
@@ -228,6 +228,9 @@ def loadEssayConfig(configFile):
 
       if('PARAM_TARGETPATH' in EssayParameters):
         EssayParameters['PARAM_TARGETPATH']  = eval(EssayParameters['PARAM_TARGETPATH'][0])
+
+      if('PARAM_DATAFIELDS' in EssayParameters):
+        EssayParameters['PARAM_DATAFIELDS']  = eval(EssayParameters['PARAM_DATAFIELDS'][0])
 
       if('PARAM_TERRITORY' in EssayParameters):
         EssayParameters['PARAM_TERRITORY']  = eval(EssayParameters['PARAM_TERRITORY'][0])
@@ -312,12 +315,12 @@ def listEssayConfig():
 def rint(val):
   return int(round(val, 0))
 
-def loadSourceData(sourcepath, filename, territory, popsizes): #xxx use the header to locate the fields
+def loadSourceData(sourcepath, filename, fields, territory, popsizes): #xxx use the header to locate the fields
 
   # maps the fields in the raw data that will compose the source data
   content = file2List(os.path.join(*sourcepath, filename))
   header  = content[0]
-  sourceFields  = [header.index(field) for field in ['regiao', 'estado', 'municipio', 'data', 'casosNovos', 'obitosNovos']]
+  sourceFields  = [header.index(field) for field in fields]
 
   #- order of the sourceFields:
   #  0  regiao
@@ -347,7 +350,8 @@ def loadSourceData(sourcepath, filename, territory, popsizes): #xxx use the head
 
           for k in range(3):
             if(buffer[k] == ''): buffer[k] = '*'
-          newArea = '{0}, {1}, {2}'.format(buffer[0], buffer[1], buffer[2])
+          #newArea = '{0}, {1}, {2}'.format(buffer[0], buffer[1], buffer[2])
+          newArea = '{0}, {1}, {2}'.format(level0, level1, level2)
           relevantAreas.append(newArea)
           buffer[2] = newArea
 

@@ -14,9 +14,11 @@ SIAM Chapter ICMC - Resources
 
 	Method: the group will adopt a number of methods to tackle the problem:
 
-		{STATE; I believe that we are now moving in this direction}
-		(1) A machine learning method to fit a SIRD-like model to surveillance data. Contact rate assumed variable, other model parameters assumed constant in time. The aim is short-term forecast of new infections, recoveries, and deaths.
-		It must noted that this arrangement lies on an implicit premise: the assumption that no intervention will be made by health authorities. {CONTROVERSE} This premise severely circumscribes the use of the model to indicate that some intervention ought to be made to reduce some relevant risk, such as excess demand for bed-days, ICU-days, or medical supplies. The model would be more useful if it could support the selection (and calibration) of available interventions to contain the spread of the disease (as in [10]).
+		{STATE; I believe we are moving in this direction}
+		(1) A machine learning method to fit a SIRD-like model to surveillance data. Contact rate assumed as being variable, other model parameters assumed constant in time. The aim is short-term forecast of new infections, recoveries, and deaths.
+		
+		{LIMITATION}
+		It must noted that this arrangement lies on an implicit premise: the assumption that no intervention will be made by health authorities. {CONTROVERSE} This premise severely circumscribes the use of the model to indicate that some intervention ought to be made to avoid some unwanted development, such as excess demand for bed-days, ICU-days, or medical supplies. The model would be more useful if it could support the selection (and calibration) of available interventions to contain the spread of the disease (as in [10]). This would require a change in perspective: from a predictive task to a simulational task.
 		{KEYWORDS; SIRD model, macro-level; machine learning; risk management}
 
 #---------------------------------------------------------------------------------------------------
@@ -70,6 +72,19 @@ SIAM Chapter ICMC - Resources
 # Questions and attempted answers
 #---------------------------------------------------------------------------------------------------
 
+Do the resulting surveillance data look like the data being daily reported in the news outlets?
+	Yes, at least for country-level.
+
+Looking at the surveillance data, is it possible to identify different "waves"?
+	First, we need an operational definition of "wave". In [19], the authors seem to identify an epidemic wave with as an accelerated growth in the curve of new cases, namely ∆C(t), that can be visually identified. This is (to me) an unsatisfactory definition, but let's play along. The authors in [21] propose "a working definition and operationalization of waves to enable common ground to understand and communicate COVID-19 crisis": "An upward (downward) period refers to a period of at least n (=14) consecutive days when Rt is bigger (smaller) than 1."
+	Answer: I was able to see two waves in Manaus, as authors in [19] indicate, roughly according to criteria in [21].
+
+As a result from Projeto S, all adult individuals from Serrana, SP, have been vaccinated. Health authorities argue that deaths have decreased 95% as a result of massive immunisation [22]. Compared to Itapevi, SP, which has not received a similar intervention, this decrease is hardly seen in the curve for D(t). What is going on?
+	Answer: I don't know.
+	
+The success if any data-drive model depends, of course, on the quality of available data. Are we rationally justified to believe that the available data is adequate to attain our research objective?
+	Well, I would bet that both measured variables, number of new cases and deaths, are unacceptably underestimated. Evidence for the latter can be found in [18].
+
 Have SIR-like models been recently employed in the literature on Epidemiology?
 	Yes, it seems:
 	https://link.springer.com/article/10.1007/s10654-021-00748-2
@@ -84,6 +99,7 @@ An important assumption of the SIR model is that recovered individuals are perma
 	https://www.journalofinfection.com/article/S0163-4453(21)00043-8/fulltext (Brazil)
 	https://www.sciencedirect.com/science/article/pii/S187603412100006X
 	https://www.sciencedirect.com/science/article/pii/S1047279721000612?via%3Dihub
+	https://www.nature.com/articles/d41586-020-02948-4
 
 #---------------------------------------------------------------------------------------------------
 # References
@@ -129,6 +145,17 @@ An important assumption of the SIR model is that recovered individuals are perma
 
 [17] A. S. Peddireddy et al., "From 5Vs to 6Cs: Operationalizing Epidemic Data Management with COVID-19 Surveillance," IEEE International Conference on Big Data (Big Data), 2020, pp. 1380-1387, doi: 10.1109/BigData50022.2020.9378435.
 
+[18] Painel de análise do excesso de mortalidade por causas naturais no Brasil, CONASS - conselho Nacional de Secretários de Saúde. 31 de maio de 2021.https://www.conass.org.br/indicadores-de-obitos-por-causas-naturais/
+
+[19] Naveca, F.G., Nascimento, V., de Souza, V.C. et al. COVID-19 in Amazonas, Brazil, was driven by the persistence of endemic lineages and P.1 emergence. Nat Med (2021). https://doi.org/10.1038/s41591-021-01378-7
+
+[20] (WHO) Weekly situation report, edition 41 of May 25, 2021 
+{Variant of Concern (VOC); Variant of Interest (VOI)}
+
+[21] Zhang, Stephen X., Francisc Arroyo Marioli, and Renfei Gao. "A Second Wave? What Do People Mean By COVID Waves?-A Working Definition of Epidemic Waves." MedRxiv (2021).
+
+[22] https://butantan.gov.br/noticias/projeto-s-imunizacao-em-serrana-faz-casos-de-covid-19-despencarem-80-e-mortes-95
+
 #---------------------------------------------------------------------------------------------------
 # Additional resources
 #---------------------------------------------------------------------------------------------------
@@ -171,9 +198,6 @@ Tarefa que eu peguei:
 1-) estamos sem os dados dos recovered. Seria interessante olharmos a referência dos dados do Infotracker para o cálculo dos recovered, baseada na metodologia da Universidade de Melbourne ( http://covid19forecast.science.unimelb.edu.au/ ); resumindo, precisamos estimar o parâmetro Rdata;
 
 	Conforme nota publicada em https://www.viser.com.br/covid-19/sp-covid-info-tracker, "para aferir A(t) e Rec(t) tal como apresentada na plataforma on-line, foi considerada a Metodologia 2". Essa metodologia é descrita em [17].
-
-	Checar como os dados em "dados_diarios_estado_SP" foram coletados.
-		resuminho rápido do que temos em dados: infectados até determinado dia, infectados exatamente naquele dia, óbitos acumulados, óbitos em determinado dia; os dados são todos diários, e temos dados desde fevereiro de 2020 até ontem. os dados limpos são do estado de São Paulo, mas tenho para o Brasil todo também
 
 
 

@@ -1,0 +1,20 @@
+File	Date	Variable	Value	Description
+daily_changes	2020-03-20	∆R(t)	-1	must be larger than zero
+daily_changes	2020-03-21	∆R(t)	-1	must be larger than zero
+daily_changes	2020-03-22	∆R(t)	-1	must be larger than zero
+daily_changes	2020-03-23	∆R(t)	-3	must be larger than zero
+daily_changes	2020-03-24	∆R(t)	-3	must be larger than zero
+surveillance	2020-03-24	R(t)	-1	must be larger than zero
+daily_changes	2020-03-25	∆R(t)	-6	must be larger than zero
+surveillance	2020-03-25	R(t)	-7	must be larger than zero
+daily_changes	2020-03-26	∆R(t)	-6	must be larger than zero
+surveillance	2020-03-26	R(t)	-13	must be larger than zero
+daily_changes	2020-03-27	∆R(t)	-8	must be larger than zero
+surveillance	2020-03-27	R(t)	-21	must be larger than zero
+daily_changes	2020-03-28	∆R(t)	-6	must be larger than zero
+surveillance	2020-03-28	R(t)	-27	must be larger than zero
+daily_changes	2020-03-29	∆R(t)	-8	must be larger than zero
+surveillance	2020-03-29	R(t)	-35	must be larger than zero
+surveillance	2020-03-30	R(t)	-30	must be larger than zero
+surveillance	2020-03-31	R(t)	-29	must be larger than zero
+surveillance	2020-04-01	R(t)	-13	must be larger than zero

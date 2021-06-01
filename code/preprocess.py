@@ -59,6 +59,7 @@ def main(configFile):
   param_sourcepath  = getEssayParameter('PARAM_SOURCEPATH')
   param_targetpath  = getEssayParameter('PARAM_TARGETPATH')
   param_datafile    = getEssayParameter('PARAM_DATAFILE')
+  param_datafields  = getEssayParameter('PARAM_DATAFIELDS')
   param_territory   = getEssayParameter('PARAM_TERRITORY')
   param_popsizes    = getEssayParameter('PARAM_POPSIZES')
   param_outcomes    = getEssayParameter('PARAM_OUTCOMES')
@@ -95,7 +96,8 @@ def main(configFile):
 
   # loads the raw dataset
   tsprint('Loading raw data')
-  (sourceData, N, timeline, date2t) = loadSourceData(param_sourcepath, param_datafile, param_territory, param_popsizes)
+  (sourceData, N, timeline, date2t) = loadSourceData(param_sourcepath, param_datafile, 
+                                                     param_datafields, param_territory, param_popsizes)
   tsprint('-- {0} records have been loaded.'.format(len(sourceData)))
   tsprint('-- samples:')
   tsprint('   {0}'.format(sourceData[0]))
