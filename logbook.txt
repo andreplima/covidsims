@@ -81,9 +81,12 @@ Looking at the surveillance data, is it possible to identify different "waves"?
 
 As a result from Projeto S, all adult individuals from Serrana, SP, have been vaccinated. Health authorities argue that deaths have decreased 95% as a result of massive immunisation [22]. Compared to Itapevi, SP, which has not received a similar intervention, this decrease is hardly seen in the curve for D(t). What is going on?
 	Answer: I don't know.
+
+Is it true that higher mortality rate has been consistenly observed in regions with high concentration of anti-vaxxers?
+	Answer: I don't know.
 	
 The success if any data-drive model depends, of course, on the quality of available data. Are we rationally justified to believe that the available data is adequate to attain our research objective?
-	Well, I would bet that both measured variables, number of new cases and deaths, are unacceptably underestimated. Evidence for the latter can be found in [18].
+	Well, I would bet that both measured variables, number of new cases and deaths, are badly underestimated. Evidence for the latter can be found in [18].
 
 Have SIR-like models been recently employed in the literature on Epidemiology?
 	Yes, it seems:
