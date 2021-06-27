@@ -204,6 +204,14 @@ Tarefa que eu peguei:
 
 
 
+[6/27/2021 12:41:45 PM] Found the code of the model used by the Imperial College team to produce the simulations that were presented to the UK government back in 16 March 2020:
+
+(1) the code is available in this repository:
+	https://github.com/mrc-ide/covid-sim/tree/7282c948b940c8bd90d6afaa1575afb3848aa8b5
+	
+(2) for a little bit of useful history, see:
+	./articles/Modeling the pandemic - The simulations driving the world's response to COVID-19.pdf
+	./articles/Influential pandemic simulation verified by code checkers.pdf
 
 
 
