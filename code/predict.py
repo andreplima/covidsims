@@ -1,6 +1,7 @@
 """
 
-  Ideas implemented here follow some ideas from these sources:
+  Many ideas implemented here follow definitions and insights from these sources:
+  
   [1] Funk, S., Camacho, A., Kucharski, A. J., Lowe, R., Eggo, R. M., & Edmunds, W. J. (2019).
       Assessing the performance of real-time epidemic forecasts: A case study of Ebola in the
       Western Area region of Sierra Leone, 2014-15. PLoS computational biology, 15(2).
@@ -36,28 +37,28 @@ class TimeSeries:
     # properties modified during runtime
     self.fitted      = []         # fitted ~ [(fitted model, model assessment), ...]
 
-  def fit(self, seriesType = 'O'):
+  def fit(self, seriesType):
 
-      for id in dataset:
+    for id in dataset:
 
-        # splits the time series into training and test series
-        ts = dataset[id][seriesType]
-        cut = len(ts) - self.plength
-        (ts_tr, ts_te) = (ts[0:cut], ts[cut:])
+      # splits the time series into training and test series
+      ts = dataset[id][seriesType]
+      cut = len(ts) - self.plength
+      (ts_tr, ts_te) = (ts[0:cut], ts[cut:])
 
-        # instantiates and fits the model to the training series,
-        # and obtains a prediction (i.e., a series of length plength that continues the training series)
-        model = self.instantiateModel(self.modelType, self.modelParams)
-        model.fit(ts_tr)
-        ts_pr = model.predict()
+      # instantiates and fits the model to the training series,
+      # and obtains a prediction (i.e., a series of length plength that continues the training series)
+      model = self.instantiateModel(self.modelType, self.modelParams)
+      model.fit(ts_tr)
+      ts_pr = model.predict()
 
-        # assesses the quality of the prediction using the evaluation framework from [3]
-        metrics = self.assess(ts_te, ts_pr, ts_tr[-1])
+      # assesses the quality of the prediction using the evaluation framework from [3]
+      metrics = self.assess(ts_te, ts_pr, ts_tr[-1])
 
-        # stores the model and the obtained assessment
-        self.fitted.append(model, metrics)
+      # stores the model and the obtained assessment
+      self.fitted.append(model, metrics)
 
-      return None
+    return None
 
   def assess(self, ts_te, ts_pr, last):
 
@@ -138,6 +139,58 @@ class kNN_TSPi:
     self.series = None  # xxx
 
   def fit(self, ts_tr):
+
+def model_knn(ticker, timepos, param_modelinit, priceType, timeline, constituents, stocks):
+  """
+  produces an estimate using the knn-TSPi algorithm (1-day-ahead, no lag)
+  please, consider having a look at this article:
+  Parmezan, A. R. S., & Batista, G. E. (2015, December). A study of the use of complexity measures in the similarity search process adopted
+  by knn algorithm for time series prediction. In 2015 IEEE 14th International Conference on Machine Learning and Applications (ICMLA)
+  (pp. 45-51). IEEE.
+  [https://bdpi.usp.br/bitstream/handle/BDPI/50010/2749829.pdf;jsessionid=4B273341218463337CD653EF2B283F25?sequence=1]
+  parameters recovered from model initialisation dictionary:
+  w  - length of the sliding window
+  k  - number of nearest neighbours that will be used to predict the target value
+  rp - the length of the "relevant past" range
+  """
+
+  # recovers model parameters
+  w  = param_modelinit['w']
+  k  = param_modelinit['k']
+  rp = param_modelinit['MT']
+
+  #segment = [stocks[(ticker, timeline[_timepos])][priceType] for _timepos in range(constituents[ticker].first, timepos)]
+  segment = [stocks[(ticker, timeline[timepos - j - 1])][priceType] for j in range(rp)]
+  segment = np.array(segment)
+
+  # fits the model with historical data (prior to the 'timepos') and produces an estimate (for 'timepos')
+  (fn, fd, fa) = (normalise, CID, aggregate)
+
+  try:
+
+    ts, _ = fn(segment)   # differentiates and normalises the time series
+    Q = ts[-w:]           # defines the query Q subsequence
+    S = genss(ts[:-w], w) # creates a subsequence generator as [(position <as int>, subsequence <as np.array>), ...]
+
+    # computes the distance between the query and each of the subsequence
+    D = [(pos, fd(Q,ss)) for (pos,ss) in S]
+
+    # identifies the k subsequences in S that are the nearest to Q
+    P = [pos for (pos, _) in sorted(D, key=lambda e:e[1])][:k]
+
+    # recovers the next value of each subsequence in P and use them to forecast the next value for query Q
+    res = fa([segment[pos+w] for pos in P])
+
+  except Exception as e:
+    res = ECO_PRED_UNAVAILABLE
+    tsprint('   cannot perform prediction for asset {0} in {1} because the model failed. {2}'.format(
+                ticker,
+                ts2datestr(timeline[timepos]),
+                str(e),
+                ))
+
+  return res
+
 
 
   def predict(self):
