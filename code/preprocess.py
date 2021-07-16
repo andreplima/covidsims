@@ -91,12 +91,12 @@ def main(configFile):
   seed(ECO_SEED)
 
   #---------------------------------------------------------------------------------------------
-  # This is where the job is actually done; the rest is boilerpate
+  # This is where the job is actually done; the rest is boilerplate
   #---------------------------------------------------------------------------------------------
 
   # loads the raw dataset
   tsprint('Loading raw data')
-  (sourceData, N, timeline, date2t) = loadSourceData(param_sourcepath, param_datafile, 
+  (sourceData, N, timeline, date2t) = loadSourceData(param_sourcepath, param_datafile,
                                                      param_datafields, param_territory, param_popsizes)
   tsprint('-- {0} records have been loaded.'.format(len(sourceData)))
   tsprint('-- samples:')
