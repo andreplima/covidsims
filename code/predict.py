@@ -29,7 +29,7 @@ import sharedDefs as ud
 from os          import listdir, makedirs, remove
 from os.path     import join, isfile, isdir, exists
 from random      import seed
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 
 from sharedDefs import ECO_SEED, ECO_PRECISION
 from sharedDefs import setupEssayConfig, getEssayParameter, setEssayParameter, overrideEssayParameter
@@ -40,7 +40,7 @@ Metrics = namedtuple('Metrics', ['mse', 'tu', 'pocid', 'er', 'mcpm'])
 
 class TimeSeries:
 
-  def __init__(self, dataset, modelType, modelParams, pmethod, plength = 14):
+  def __init__(self, dataset, modelType, modelParams, plength = 14):
 
     # properties defined during instantiation (and unmodified during runtime)
     self.dataset     = dataset    # dataset ~ {id: {S: ts, I: ts, R: ts, D: ts, C: ts}, ...}
@@ -56,10 +56,10 @@ class TimeSeries:
 
   def fit(self, seriesType):
 
-    for id in dataset:
+    for id in self.dataset:
 
       # splits the time series into training and test series
-      ts = dataset[id][seriesType]
+      ts = self.dataset[id][seriesType]
       cut = len(ts) - self.plength
       (ts_tr, ts_te) = (ts[0:cut], ts[cut:])
 
@@ -200,25 +200,25 @@ class kNN_TSPi:
     """
 
     # 1. S contains all subsequences of length l that makes up the search space
-    #    Q is the query subsequence
-    (S, Q) = self.generate_subsequences(self.Z, self.l)
+    #    q is the query subsequence
+    (S, q) = self.generate_subsequences(self.Z, self.l)
 
-    # 2. S_ contains the normalised subsequences in S
-    # 3. Q_ corresponds to normalised Q
-    (S_,  _)    = zip(*[self.normalise(subseq) for subseq in S])
-    (Q_, stats) = self.normalise(Q)
+    # 2. S_ contains the subsequences in S, normalised (using z-core)
+    # 3. q_ corresponds to normalised q
+    (S_, S_stats) = zip(*[self.normalise(subseq) for subseq in S])
+    (q_, q_stats) = self.normalise(q)
 
-    # 4. D[j] contains the complexity-invariant distance between Q and each subsequence S[j]
-    D = self.CID(Q_, S_)
+    # 4. D[j] contains the complexity-invariant distance between q_ and each subsequence S_[j]
+    D = [(j, self.CID(q_, S_[j])) for j in range(len(S_))]
 
-    # 5. selects k subsequences in S_ most similar to Q
+    # 5. selects the k subsequences in S_ most similar to q_
     P = self.search_nearest_neighbours(D, self.k)
 
     # 6. recovers the next h observations of each of the k most similar subsequences in P
-    ts_pr_ = self.recover_samples(P, self.Z, self.l, self.h)
+    ts_pr_ = self.recover_samples(P, S_stats, self.Z, self.l, self.h)
 
-    # 7. averages the observations in R_ and denormalises the result
-    ts_pr = self.denormalise(ts_pr_, stats)
+    # 7. denormalises the obtained prediction
+    ts_pr = self.denormalise(ts_pr_, q_stats)
 
     return ts_pr
 
@@ -227,39 +227,45 @@ class kNN_TSPi:
     n  = m - l + 1                                 # the number of subsequences of Z with length l
     ss = [np.array(Z[j: j + l]) for j in range(n)] # the list of all such subsequences
     S  = ss[0: n - 1]                              # the list of subsequences making up the search space
-    Q  = ss[-1]                                    # the query subsequence
-    return (S, Q)
+    q  = ss[-1]                                    # the query subsequence
+
+    # xxx delete: block inserted for inspection
+    t = lambda l: ';'.join([str(e) for e in l])
+    d = defaultdict(int)
+    X = [Z[j: j + l] for j in range(n)]
+    for L in X: d[t(L)] += 1
+
+    return (S, q)
 
   def normalise(self, subseq):
     mu  = np.mean(subseq)
     sd  = np.std(subseq, ddof=1)
-    stats = (mu, sd)
+    stats   = (mu, sd)
     subseq_ = (subseq - mu) / sd
     return (subseq_, stats)
 
-  def CID(self, Q_, S_):
+  def CE(self, subseq):
+    return sum([(subseq[i] - subseq[i+1])**2 for i in range(len(subseq) - 1)]) ** .5
 
-    def CE(subseq):
-      return sum([(subseq[i] - subseq[i+1])**2 for i in range(len(subseq) - 1)]) ** .5
-
-    cQ_ = CE(Q_)
-    D = []
-    for j in range(len(S_)):
-      s_ = S_[j]
-      ed  = np.linalg.norm(Q_ - s_)
-      cs_ = CE(s_)
-      cf  = max(cQ_, cs_)/min(cQ_, cs_)
-      D.append((j, ed * cf))
-    return D
+  def CID(self, q_, s_):
+    ed  = np.linalg.norm(q_ - s_)
+    cq_ = self.CE(q_)
+    cs_ = self.CE(s_)
+    cf  = max(cq_, cs_)/min(cq_, cs_)
+    res = ed * cf
+    return res
 
   def search_nearest_neighbours(self, D, k):
     L = [j for (j, dist) in sorted(D, key = lambda e:e[1])]
     return L[0:k]
 
-  def recover_samples(self, P, Z, l, h):
-    ss = [np.array(Z[j: j + l + h]) for j in P] # the list of all nearest neighbours
-    ss = [subseq for subseq in ss if len(subseq) == (l + h)]
-    (ss_, _) = zip(*[self.normalise(subseq) for subseq in ss])
+  def recover_samples(self, P, S_stats, Z, l, h):
+    ss_ = []
+    for j in P:
+      (mu, sd) = S_stats[j]
+      subseq = (np.array(Z[j: j + l + h]) - mu) / sd
+      ss_.append(subseq)
+    ss_ = [subseq for subseq in ss_ if len(subseq) == (l + h)]
     ts_pr_ = np.mean(ss_, 0)[-h:]
     return ts_pr_
 
@@ -269,18 +275,15 @@ class kNN_TSPi:
     return ts_pr
 
 
-def main(configFile):
+def at_knn_TSPi():
 
-  ud.LogBuffer = []
-
-  # recovers an exemplar of time series
+  # assembly test for knn-TSPi class
   sourcepath = [getMountedOn(), 'Task Stage', 'Task - covidsims', 'covidsims', 'results', 'P01', 'C0']
   filename   = 'fa_constant_level.data'
   #filename   = 'fa_increasing_trend.data'
   #filename   = 'fc_constant_level.data'
   ts = [float(l[0]) for l in file2List(join(*sourcepath, filename))]
 
-  # instantiates the model
   max_p = 25
   h     = 14
   modelParams = (max_p, h)
@@ -294,6 +297,25 @@ def main(configFile):
   print(ts_pr)
   print(ts_te)
   print(np.linalg.norm(ts_te - ts_pr))
+
+def at_TimeSeries():
+
+  # assembly test for knn-TSPi class
+  sourcepath = [getMountedOn(), 'Task Stage', 'Task - covidsims', 'covidsims', 'results', 'P01', 'C0']
+  filenames  = ['fa_constant_level.data', 'fa_increasing_trend.data', 'fc_constant_level.data']
+  loader = lambda filename: [float(l[0]) for l in file2List(join(*sourcepath, filename))]
+  dataset = {filename: {'Test': loader(filename)} for filename in filenames}
+
+  o = TimeSeries(dataset, 'kNN-TSPi', (25, 14))
+  o.fit('Test')
+  serialise(o, 'o')
+
+def main(configFile):
+
+  ud.LogBuffer = []
+
+  #at_knn_TSPi()
+  at_TimeSeries()
 
   tsprint('Process completed')
 
