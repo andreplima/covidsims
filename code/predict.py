@@ -1,7 +1,7 @@
 """
 
   Many ideas implemented here follow definitions and insights from these sources:
-  
+
   [1] Funk, S., Camacho, A., Kucharski, A. J., Lowe, R., Eggo, R. M., & Edmunds, W. J. (2019).
       Assessing the performance of real-time epidemic forecasts: A case study of Ebola in the
       Western Area region of Sierra Leone, 2014-15. PLoS computational biology, 15(2).
@@ -11,14 +11,32 @@
   [3] Parmezan, A. R. S., Souza, V. M., & Batista, G. E. (2019). Evaluation of statistical and machine
       learning models for time series prediction: Identifying the state-of-the-art and the best conditions
       for the use of each model. Information Sciences, 484, 302-337.
+
+  [4] Younhee Lee and Woong Lim. 2017. Shoelace formula: Connecting the area of a polygon with vector
+      cross product. Mathematics Teacher 110, 8 (2017), 631–636.
+
+  [5] Parmezan, A. R. S., Batista, G. E. (2015, December). A study of the use of complexity measures in the
+      similarity search process adopted by knn algorithm for time series prediction. In 2015 IEEE 14th
+      International Conference on Machine Learning and Applications (ICMLA) (pp. 45-51). IEEE.
+
 """
 
+import os
+import sys
 import numpy as np
+import sharedDefs as ud
 
-ECO_PRECISION = 1E-6
+from os          import listdir, makedirs, remove
+from os.path     import join, isfile, isdir, exists
+from random      import seed
+from collections import namedtuple
 
-ECO_ITERATIVE_METHOD = 0
-ECO_UPDATE_METHOD    = 1
+from sharedDefs import ECO_SEED, ECO_PRECISION
+from sharedDefs import setupEssayConfig, getEssayParameter, setEssayParameter, overrideEssayParameter
+from sharedDefs import getMountedOn, serialise, saveAsText, stimestamp, tsprint, saveLog
+from sharedDefs import file2List
+
+Metrics = namedtuple('Metrics', ['mse', 'tu', 'pocid', 'er', 'mcpm'])
 
 class TimeSeries:
 
@@ -28,7 +46,6 @@ class TimeSeries:
     self.dataset     = dataset    # dataset ~ {id: {S: ts, I: ts, R: ts, D: ts, C: ts}, ...}
     self.modelType   = modelType  # str: 'MA', 'SIRD', etc.
     self.modelParams = modelParams
-    self.pmethod     = pmethod    # ECO_ITERATIVE_METHOD or ECO_UPDATE_METHOD
     self.plength     = plength    # int: length of the predictions to be produced
                                   # deciding for a default plength is 2 weeks is based on:
                                   # - predictions beyond this timeframe are no good to guide public policy [1]
@@ -56,7 +73,7 @@ class TimeSeries:
       metrics = self.assess(ts_te, ts_pr, ts_tr[-1])
 
       # stores the model and the obtained assessment
-      self.fitted.append(model, metrics)
+      self.fitted.append((model, metrics))
 
     return None
 
@@ -89,6 +106,8 @@ class TimeSeries:
 
     def mcpm(scores):              # multi-criteria performance measure
                                    # computes the area of a polygon defined by the scores
+
+      # projects the scores to points over equiangular axes in R^2
       nd = len(scores)
       ra = 2 * np.pi / nd
       axes = [i * ra for i in range(nd)]
@@ -97,6 +116,8 @@ class TimeSeries:
         (r, theta) = (scores[i], axes[i])
         X.append(r * np.cos(theta))
         Y.append(r * np.sin(theta))
+
+      # applies the Shoelace theorem to compute the area of the polygon [4]
       acc = 0
       for k in range(nd):
         next_k = (k+1) % nd
@@ -110,8 +131,9 @@ class TimeSeries:
     score_pocid = pocid(ts_te, ts_pr, last)
     score_er    = 100 - score_pocid
     score_mcpm  = mcpm([score_mse, score_tu, score_er])
+    metrics     = Metrics(score_mse, score_tu, score_pocid, score_er, score_mcpm)
 
-    return (score_mse, score_tu, score_pocid, score_mcpm)
+    return metrics
 
   def instantiateModel(self, modelType, modelParams):
 
@@ -120,9 +142,12 @@ class TimeSeries:
     else:
       raise ValueError('Model {0} has not been implemented.'.format(modelType))
 
-		return model
+    return model
 
 class kNN_TSPi:
+  """
+  performs time series prediction using the knn-TSPi algorithm [5]
+  """
 
   def __init__(self, modelParams):
 
@@ -134,65 +159,144 @@ class kNN_TSPi:
     self.h      = h     # the length of the predicted series
 
     # properties modified during runtime
-    self.l      = None  # xxx
-    self.k      = None  # xxx
-    self.series = None  # xxx
+    self.l      = None  # the length of the query subsequence, in number of observations
+    self.k      = None  # the number of similar subsequences
+    self.Z      = None  # the base time series with m observations
+    self.m      = None
 
   def fit(self, ts_tr):
+    """
+    implements the holdout validation procedure in [3]
+    """
 
-def model_knn(ticker, timepos, param_modelinit, priceType, timeline, constituents, stocks):
-  """
-  produces an estimate using the knn-TSPi algorithm (1-day-ahead, no lag)
-  please, consider having a look at this article:
-  Parmezan, A. R. S., & Batista, G. E. (2015, December). A study of the use of complexity measures in the similarity search process adopted
-  by knn algorithm for time series prediction. In 2015 IEEE 14th International Conference on Machine Learning and Applications (ICMLA)
-  (pp. 45-51). IEEE.
-  [https://bdpi.usp.br/bitstream/handle/BDPI/50010/2749829.pdf;jsessionid=4B273341218463337CD653EF2B283F25?sequence=1]
-  parameters recovered from model initialisation dictionary:
-  w  - length of the sliding window
-  k  - number of nearest neighbours that will be used to predict the target value
-  rp - the length of the "relevant past" range
-  """
+    # splits the time series into training and validation series
+    n = len(ts_tr) - self.h
+    (S, ts_val) = (ts_tr[0:n], np.array(ts_tr[n:]))
+    self.Z = S
 
-  # recovers model parameters
-  w  = param_modelinit['w']
-  k  = param_modelinit['k']
-  rp = param_modelinit['MT']
+    # seeks for suitable values for parameters l and k
+    min_error = np.inf
+    for self.l in range(3, self.max_p + 1, 2):
+      for self.k in range(1, 9 + 1, 2):
+        ts_pr = self.predict()
+        error = np.linalg.norm(ts_val - ts_pr)
+        print(self.l, self.k, error)
+        if(error < min_error):
+          min_error = error
+          (l_best, k_best) = (self.l, self.k)
 
-  #segment = [stocks[(ticker, timeline[_timepos])][priceType] for _timepos in range(constituents[ticker].first, timepos)]
-  segment = [stocks[(ticker, timeline[timepos - j - 1])][priceType] for j in range(rp)]
-  segment = np.array(segment)
+    self.l = l_best
+    self.k = k_best
+    self.Z = ts_tr
+    print(self.l, self.k)
 
-  # fits the model with historical data (prior to the 'timepos') and produces an estimate (for 'timepos')
-  (fn, fd, fa) = (normalise, CID, aggregate)
+    # xxx check if l and h are compatible with m
 
-  try:
-
-    ts, _ = fn(segment)   # differentiates and normalises the time series
-    Q = ts[-w:]           # defines the query Q subsequence
-    S = genss(ts[:-w], w) # creates a subsequence generator as [(position <as int>, subsequence <as np.array>), ...]
-
-    # computes the distance between the query and each of the subsequence
-    D = [(pos, fd(Q,ss)) for (pos,ss) in S]
-
-    # identifies the k subsequences in S that are the nearest to Q
-    P = [pos for (pos, _) in sorted(D, key=lambda e:e[1])][:k]
-
-    # recovers the next value of each subsequence in P and use them to forecast the next value for query Q
-    res = fa([segment[pos+w] for pos in P])
-
-  except Exception as e:
-    res = ECO_PRED_UNAVAILABLE
-    tsprint('   cannot perform prediction for asset {0} in {1} because the model failed. {2}'.format(
-                ticker,
-                ts2datestr(timeline[timepos]),
-                str(e),
-                ))
-
-  return res
-
-
+    return None
 
   def predict(self):
+    """
+    implements the kNN-TSPi procedure in [5]
+    """
+
+    # 1. S contains all subsequences of length l that makes up the search space
+    #    Q is the query subsequence
+    (S, Q) = self.generate_subsequences(self.Z, self.l)
+
+    # 2. S_ contains the normalised subsequences in S
+    # 3. Q_ corresponds to normalised Q
+    (S_,  _)    = zip(*[self.normalise(subseq) for subseq in S])
+    (Q_, stats) = self.normalise(Q)
+
+    # 4. D[j] contains the complexity-invariant distance between Q and each subsequence S[j]
+    D = self.CID(Q_, S_)
+
+    # 5. selects k subsequences in S_ most similar to Q
+    P = self.search_nearest_neighbours(D, self.k)
+
+    # 6. recovers the next h observations of each of the k most similar subsequences in P
+    ts_pr_ = self.recover_samples(P, self.Z, self.l, self.h)
+
+    # 7. averages the observations in R_ and denormalises the result
+    ts_pr = self.denormalise(ts_pr_, stats)
+
+    return ts_pr
+
+  def generate_subsequences(self, Z, l):
+    m  = len(Z)
+    n  = m - l + 1                                 # the number of subsequences of Z with length l
+    ss = [np.array(Z[j: j + l]) for j in range(n)] # the list of all such subsequences
+    S  = ss[0: n - 1]                              # the list of subsequences making up the search space
+    Q  = ss[-1]                                    # the query subsequence
+    return (S, Q)
+
+  def normalise(self, subseq):
+    mu  = np.mean(subseq)
+    sd  = np.std(subseq, ddof=1)
+    stats = (mu, sd)
+    subseq_ = (subseq - mu) / sd
+    return (subseq_, stats)
+
+  def CID(self, Q_, S_):
+
+    def CE(subseq):
+      return sum([(subseq[i] - subseq[i+1])**2 for i in range(len(subseq) - 1)]) ** .5
+
+    cQ_ = CE(Q_)
+    D = []
+    for j in range(len(S_)):
+      s_ = S_[j]
+      ed  = np.linalg.norm(Q_ - s_)
+      cs_ = CE(s_)
+      cf  = max(cQ_, cs_)/min(cQ_, cs_)
+      D.append((j, ed * cf))
+    return D
+
+  def search_nearest_neighbours(self, D, k):
+    L = [j for (j, dist) in sorted(D, key = lambda e:e[1])]
+    return L[0:k]
+
+  def recover_samples(self, P, Z, l, h):
+    ss = [np.array(Z[j: j + l + h]) for j in P] # the list of all nearest neighbours
+    ss = [subseq for subseq in ss if len(subseq) == (l + h)]
+    (ss_, _) = zip(*[self.normalise(subseq) for subseq in ss])
+    ts_pr_ = np.mean(ss_, 0)[-h:]
+    return ts_pr_
+
+  def denormalise(self, ts_pr_, stats):
+    (mu, sd) = stats
+    ts_pr = (ts_pr_ * sd) + mu
+    return ts_pr
 
 
+def main(configFile):
+
+  ud.LogBuffer = []
+
+  # recovers an exemplar of time series
+  sourcepath = [getMountedOn(), 'Task Stage', 'Task - covidsims', 'covidsims', 'results', 'P01', 'C0']
+  filename   = 'fa_constant_level.data'
+  #filename   = 'fa_increasing_trend.data'
+  #filename   = 'fc_constant_level.data'
+  ts = [float(l[0]) for l in file2List(join(*sourcepath, filename))]
+
+  # instantiates the model
+  max_p = 25
+  h     = 14
+  modelParams = (max_p, h)
+  model = kNN_TSPi(modelParams)
+  cut   = len(ts) - h
+  (ts_tr, ts_te) = (ts[0:cut], np.array(ts[cut:]))
+  model.fit(ts_tr)
+  ts_pr = model.predict()
+
+  print()
+  print(ts_pr)
+  print(ts_te)
+  print(np.linalg.norm(ts_te - ts_pr))
+
+  tsprint('Process completed')
+
+if __name__ == "__main__":
+
+  main(sys.argv[1])
