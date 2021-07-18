@@ -568,11 +568,7 @@ def playBoL(bol, N, timeline):
                                         data[date][ECO_INFECTIOUS],
                                         'must be larger than zero'))
 
-  # computes additional epidemiological stats
-  # xxx to be developed
-  stats = {}
-
-  return (data, violations, stats)
+  return (data, violations)
 
 def bol2content(territory, bol, N, timeline, date2t, derivatives = False):
 
@@ -598,3 +594,57 @@ def bol2content(territory, bol, N, timeline, date2t, derivatives = False):
     content.append(buffer)
 
   return '\n'.join(content)
+
+#-------------------------------------------------------------------------------------------------------------------------------------------
+# Problem specific definitions - metrics to evaluate the quality of predictions used in:
+#  Parmezan, A. R. S., Souza, V. M., & Batista, G. E. (2019). Evaluation of statistical and machine
+#  learning models for time series prediction: Identifying the state-of-the-art and the best conditions
+#  for the use of each model. Information Sciences, 484, 302-337.
+#-------------------------------------------------------------------------------------------------------------------------------------------
+
+def mse(ts_te, ts_pr):         # mean squared error
+  score_mse = np.mean([(ts_te[t] - ts_pr[t]) ** 2 for t in range(len(ts_pr))])
+  return score_mse
+
+def tu(ts_te, ts_pr, last):    # Theil's U
+  num = 0.0
+  den = 0.0
+  for t in range(len(ts_pr)):
+    num += (ts_te[t] - ts_pr[t]) ** 2
+    den += (ts_te[t] - last)     ** 2
+    last =  ts_te[t]
+  if(den == 0.0): den = ECO_PRECISION
+  score_tu = num/den
+  return score_tu
+
+def pocid(ts_te, ts_pr, last): # prediction of change in direction (POCID)
+  (last_te, last_pr) = (last, last)
+  acc = 0.0
+  for t in range(len(ts_pr)):
+    acc += 1 if (ts_te[t] - last_te) * (ts_pr[t] - last_pr) > 0 else 0
+    (last_te, last_pr) = (ts_te[t], ts_pr[t])
+  score_pocid = 100 * acc/len(ts_pr)
+  return score_pocid
+
+def mcpm(scores):              # multi-criteria performance measure
+                               # computes the area of a polygon defined by the scores
+
+  # projects the scores to points over equiangular axes in R^2
+  nd = len(scores)
+  ra = 2 * np.pi / nd
+  axes = [i * ra for i in range(nd)]
+  (X, Y) = ([], [])
+  for i in range(nd):
+    (r, theta) = (scores[i], axes[i])
+    X.append(r * np.cos(theta))
+    Y.append(r * np.sin(theta))
+
+  # applies the Shoelace theorem to compute the area of the polygon [4]
+  acc = 0
+  for k in range(nd):
+    next_k = (k+1) % nd
+    acc += X[k] * Y[next_k] - X[next_k] * Y[k]
+  score_mcpm = acc/2
+  return score_mcpm
+
+

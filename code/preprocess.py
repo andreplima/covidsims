@@ -116,7 +116,7 @@ def main(configFile):
   # (also computes common epidemiological stats, see [1])
   print()
   tsprint('Playing the Book of Life forward')
-  (data, violations, stats) = playBoL(bol, N, timeline)
+  (data, violations) = playBoL(bol, N, timeline)
   tsprint('-- {0} records have been created.'.format(len(data)))
 
   # saves the results

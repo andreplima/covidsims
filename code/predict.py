@@ -35,6 +35,7 @@ from sharedDefs import ECO_SEED, ECO_PRECISION
 from sharedDefs import setupEssayConfig, getEssayParameter, setEssayParameter, overrideEssayParameter
 from sharedDefs import getMountedOn, serialise, saveAsText, stimestamp, tsprint, saveLog
 from sharedDefs import file2List
+from sharedDefs import mse, tu, pocid, mcpm
 
 Metrics = namedtuple('Metrics', ['mse', 'tu', 'pocid', 'er', 'mcpm'])
 
@@ -78,52 +79,6 @@ class TimeSeries:
     return None
 
   def assess(self, ts_te, ts_pr, last):
-
-    # defines the metrics to evaluate the quality of predictions used in [3]
-    def mse(ts_te, ts_pr):         # mean squared error
-      score_mse = np.mean([(ts_te[t] - ts_pr[t]) ** 2 for t in range(self.plength)])
-      return score_mse
-
-    def tu(ts_te, ts_pr, last):    # Theil's U
-      num = 0.0
-      den = 0.0
-      for t in range(self.plength):
-        num += (ts_te[t] - ts_pr[t]) ** 2
-        den += (ts_te[t] - last)     ** 2
-        last =  ts_te[t]
-      if(den == 0.0): den = ECO_PRECISION
-      score_tu = num/den
-      return score_tu
-
-    def pocid(ts_te, ts_pr, last): # prediction of change in direction (POCID)
-      (last_te, last_pr) = (last, last)
-      acc = 0.0
-      for t in range(self.plength):
-        acc += 1 if (ts_te[t] - last_te) * (ts_pr[t] - last_pr) > 0 else 0
-        (last_te, last_pr) = (ts_te[t], ts_pr[t])
-      score_pocid = 100 * acc/self.plength
-      return score_pocid
-
-    def mcpm(scores):              # multi-criteria performance measure
-                                   # computes the area of a polygon defined by the scores
-
-      # projects the scores to points over equiangular axes in R^2
-      nd = len(scores)
-      ra = 2 * np.pi / nd
-      axes = [i * ra for i in range(nd)]
-      (X, Y) = ([], [])
-      for i in range(nd):
-        (r, theta) = (scores[i], axes[i])
-        X.append(r * np.cos(theta))
-        Y.append(r * np.sin(theta))
-
-      # applies the Shoelace theorem to compute the area of the polygon [4]
-      acc = 0
-      for k in range(nd):
-        next_k = (k+1) % nd
-        acc += X[k] * Y[next_k] - X[next_k] * Y[k]
-      score_mcpm = acc/2
-      return score_mcpm
 
     # assesses the quality of the prediction using the metrics in [3]
     score_mse   = mse(ts_te, ts_pr)
