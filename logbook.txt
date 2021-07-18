@@ -4,105 +4,105 @@ SIAM Chapter ICMC - Resources
 # Where are we heading?
 #---------------------------------------------------------------------------------------------------
 
-	What is the problem being approached by the group? {OBJECTIVE}
-	 To develop an epidemiological model to inform the selection of interventions to contain COVID-19 spread in the Brazilian territory. In other words, to develop a model to assign a relative measure of efficiency to available interventions.
+  What is the problem being approached by the group? {OBJECTIVE}
+   To develop an epidemiological model to inform the selection of interventions to contain COVID-19 spread in the Brazilian territory. In other words, to develop a model to assign a relative measure of efficiency to available interventions.
 
-	Why are we spending our time to investigate this problem? {MOTIVATION}
-		To contribute to ongoing efforts to ameliorate socioeconomic impacts of COVID-19.
+  Why are we spending our time to investigate this problem? {MOTIVATION}
+    To contribute to ongoing efforts to ameliorate socioeconomic impacts of COVID-19.
 
-	Materials: health surveillance data obtained from an online platform [1]. {CONFIRM}
+  Materials: health surveillance data obtained from an online platform [1]. {CONFIRM}
 
-	Method: the group will adopt a number of methods to tackle the problem:
+  Method: the group will adopt a number of methods to tackle the problem:
 
-		{STATE; I believe we are moving in this direction}
-		(1) A machine learning method to fit a SIRD-like model to surveillance data. Contact rate assumed as being variable, other model parameters assumed constant in time. The aim is short-term forecast of new infections, recoveries, and deaths.
-		
-		{LIMITATION}
-		It must noted that this arrangement lies on an implicit premise: the assumption that no intervention will be made by health authorities. {CONTROVERSE} This premise severely circumscribes the use of the model to indicate that some intervention ought to be made to avoid some unwanted development, such as excess demand for bed-days, ICU-days, or medical supplies. The model would be more useful if it could support the selection (and calibration) of available interventions to contain the spread of the disease (as in [10]). This would require a change in perspective: from a predictive task to a simulational task.
-		{KEYWORDS; SIRD model, macro-level; machine learning; risk management}
+    {STATE; I believe we are moving in this direction}
+    (1) A machine learning method to fit a SIRD-like model to surveillance data. Contact rate assumed as being variable, other model parameters assumed constant in time. The aim is short-term forecast of new infections, recoveries, and deaths.
+
+    {LIMITATION}
+    It must noted that this arrangement lies on an implicit premise: the assumption that no intervention will be made by health authorities. {CONTROVERSE} This premise severely circumscribes the use of the model to indicate that some intervention ought to be made to avoid some unwanted development, such as excess demand for bed-days, ICU-days, or medical supplies. The model would be more useful if it could support the selection (and calibration) of available interventions to contain the spread of the disease (as in [10]). This would require a change in perspective: from a predictive task to a simulational task.
+    {KEYWORDS; SIRD model, macro-level; machine learning; risk management}
 
 #---------------------------------------------------------------------------------------------------
 # SIRD-like epidemiological models
 #---------------------------------------------------------------------------------------------------
 
-	Typical variables of SIRD-like models:
+  Typical variables of SIRD-like models:
 
-		[Population, N]: The number of individuals residing at a territorry
-		[Suscetible, S(t)]: The number of individuals susceptible to infection at time t
-		[Infectious (or Infective, or Infected), I(t)]: The number of individuals that are (possibly) transmitting the disease to other individuals at time t
-		[Recovered, R(t)]: The number of individuals that recovered from the disease and are now immune to new infection. Also, recovered individuals are not transmitting the disease to other individuals
-		[Deceased, D(t)]: The number of individuals that died as an outcome of the infection
-		-- Note: the above are counting variables
+    [Population, N]: The number of individuals residing at a territorry
+    [Suscetible, S(t)]: The number of individuals susceptible to infection at time t
+    [Infectious (or Infective, or Infected), I(t)]: The number of individuals that are (possibly) transmitting the disease to other individuals at time t
+    [Recovered, R(t)]: The number of individuals that recovered from the disease and are now immune to new infection. Also, recovered individuals are not transmitting the disease to other individuals
+    [Deceased, D(t)]: The number of individuals that died as an outcome of the infection
+    -- Note: the above are counting variables
 
-		[$\beta$]: transmission rate [1] or contact rate [3]  -- with dimensionality 1/([u][T])
-		[$\gamma_r$]: recovery rate [1]                       -- with dimensionality 1/[T]
-		[$\gamma_d$]: death rate [1] or mortality rate        -- with dimensionality 1/[T]
-		-- Note: the above are model parameters
+    [$\beta$]: transmission rate [1] or contact rate [3]  -- with dimensionality 1/([u][T])
+    [$\gamma_r$]: recovery rate [1]                       -- with dimensionality 1/[T]
+    [$\gamma_d$]: death rate [1] or mortality rate        -- with dimensionality 1/[T]
+    -- Note: the above are model parameters
 
-		[$R_0$]: Basic case reproduction number, $R_0 = \frac{\beta}{\gamma}$  -- with dimensionality 1/[u] {CONFIRM; I was expecting an adimensional quantity}
+    [$R_0$]: Basic case reproduction number, $R_0 = \frac{\beta}{\gamma}$  -- with dimensionality 1/[u] {CONFIRM; I was expecting an adimensional quantity}
 
-		[attack rate]: {TO DO} [10]
+    [attack rate]: {TO DO} [10]
 
-	Making explicit the assumptions of the SIRD model:
-		(1) {TO DO} see [4,5]
+  Making explicit the assumptions of the SIRD model:
+    (1) {TO DO} see [4,5]
 
-	Typical SIR-like models:
+  Typical SIR-like models:
 
-		{TO DO} check wikipedia
-			https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology
-			https://en.wikipedia.org/wiki/List_of_COVID-19_simulation_models
+    {TO DO} check wikipedia
+      https://en.wikipedia.org/wiki/Compartmental_models_in_epidemiology
+      https://en.wikipedia.org/wiki/List_of_COVID-19_simulation_models
 
-		{TO DO} check wolfram
-			[18:18, 21/05/2021] +55 16 99108-5626: https://community.wolfram.com/groups/-/m/t/1896178
+    {TO DO} check wolfram
+      [18:18, 21/05/2021] +55 16 99108-5626: https://community.wolfram.com/groups/-/m/t/1896178
 
-		[SIRDC] Susceptible-Infectious-Resolving-Dead-reCovered [3]
-		[SQUIDER] [6]
+    [SIRDC] Susceptible-Infectious-Resolving-Dead-reCovered [3]
+    [SQUIDER] [6]
 
-	A couple of distinctions that are relevant to clarify typical sources of modelling errors in epidemiology:
+  A couple of distinctions that are relevant to clarify typical sources of modelling errors in epidemiology:
 
-		(1) epidemic vs endemic models [4]: "Epidemic models are used to describe rapid outbreaks that occur in less than one year, while endemic models are used for studying diseases over longer periods, during which there is a renewal of susceptibles by births or recovery from temporary immunity."
+    (1) epidemic vs endemic models [4]: "Epidemic models are used to describe rapid outbreaks that occur in less than one year, while endemic models are used for studying diseases over longer periods, during which there is a renewal of susceptibles by births or recovery from temporary immunity."
 
-		(2) macro-level vs micro-level models: macro-level models seek to describe the disease dynamics at the population level (e.g., SIR-like models have population-level variables), while micro-level models seek to simulate the disease dynamics at the individual level (e.g. individual-based models [11]). {CONTROVERSE} What do you mean by "level"? See discussion in [12].
+    (2) macro-level vs micro-level models: macro-level models seek to describe the disease dynamics at the population level (e.g., SIR-like models have population-level variables), while micro-level models seek to simulate the disease dynamics at the individual level (e.g. individual-based models [11]). {CONTROVERSE} What do you mean by "level"? See discussion in [12].
 
-			(2.1) Ferguson's research group at the Imperial College has being using the latter: "We parameterize an individual-based simulation model of pandemic influenza transmission for GB and the US using high-resolution population density data and data on travel patterns. We extend the model by incorporating realistic seeding of infection (via international travel) in the modelled countries, and by explicitly modelling air travel within the US (air travel being relatively insignificant in GB due to its much smaller size). The model represents transmission in households, schools and workplaces, and the wider community." [10]
+      (2.1) Ferguson's research group at the Imperial College has being using the latter: "We parameterize an individual-based simulation model of pandemic influenza transmission for GB and the US using high-resolution population density data and data on travel patterns. We extend the model by incorporating realistic seeding of infection (via international travel) in the modelled countries, and by explicitly modelling air travel within the US (air travel being relatively insignificant in GB due to its much smaller size). The model represents transmission in households, schools and workplaces, and the wider community." [10]
 
-			{TO DO} Ask IBGE/CS if 2022 nationwide census will collect data to localise the model in [10].
+      {TO DO} Ask IBGE/CS if 2022 nationwide census will collect data to localise the model in [10].
 
 #---------------------------------------------------------------------------------------------------
 # Questions and attempted answers
 #---------------------------------------------------------------------------------------------------
 
 Do the resulting surveillance data look like the data being daily reported in the news outlets?
-	Yes, at least for country-level.
+  Yes, at least for country-level.
 
 Looking at the surveillance data, is it possible to identify different "waves"?
-	First, we need an operational definition of "wave". In [19], the authors seem to identify an epidemic wave with as an accelerated growth in the curve of new cases, namely ∆C(t), that can be visually identified. This is (to me) an unsatisfactory definition, but let's play along. The authors in [21] propose "a working definition and operationalization of waves to enable common ground to understand and communicate COVID-19 crisis": "An upward (downward) period refers to a period of at least n (=14) consecutive days when Rt is bigger (smaller) than 1."
-	Answer: I was able to see two waves in Manaus, as authors in [19] indicate, roughly according to criteria in [21].
+  First, we need an operational definition of "wave". In [19], the authors seem to identify an epidemic wave with as an accelerated growth in the curve of new cases, namely ∆C(t), that can be visually identified. This is (to me) an unsatisfactory definition, but let's play along. The authors in [21] propose "a working definition and operationalization of waves to enable common ground to understand and communicate COVID-19 crisis": "An upward (downward) period refers to a period of at least n (=14) consecutive days when Rt is bigger (smaller) than 1."
+  Answer: I was able to see two waves in Manaus, as authors in [19] indicate, roughly according to criteria in [21].
 
 As a result from Projeto S, all adult individuals from Serrana, SP, have been vaccinated. Health authorities argue that deaths have decreased 95% as a result of massive immunisation [22]. Compared to Itapevi, SP, which has not received a similar intervention, this decrease is hardly seen in the curve for D(t). What is going on?
-	Answer: I don't know.
+  Answer: I don't know.
 
 Is it true that higher mortality rate has been consistenly observed in regions with high concentration of anti-vaxxers?
-	Answer: I don't know.
-	
-The success if any data-drive model depends, of course, on the quality of available data. Are we rationally justified to believe that the available data is adequate to attain our research objective?
-	Well, I would bet that both measured variables, number of new cases and deaths, are badly underestimated. Evidence for the latter can be found in [18].
+  Answer: I don't know.
+
+The success of any data-drive model depends, of course, on the quality of available data. Are we rationally justified to believe that the available data is adequate to attain our research objective?
+  Well, I would bet that both measured variables, number of new cases and deaths, are badly underestimated. Evidence for the latter can be found in [18].
 
 Have SIR-like models been recently employed in the literature on Epidemiology?
-	Yes, it seems:
-	https://link.springer.com/article/10.1007/s10654-021-00748-2
-	https://www.sciencedirect.com/science/article/pii/S0895435621000871
-	https://www.nature.com/articles/s41598-020-80007-8
+  Yes, it seems:
+  https://link.springer.com/article/10.1007/s10654-021-00748-2
+  https://www.sciencedirect.com/science/article/pii/S0895435621000871
+  https://www.nature.com/articles/s41598-020-80007-8
 
 Have SIR-like models been taught to students in health-related courses?
-	Well, I could not find any reference to SIR-like models in Gordis (new version) [13] and Stefens [14], which are undergraduate textbooks used in courses on epidemiology [15]. I wonder why is that so.
+  Well, I could not find any reference to SIR-like models in Gordis (new version) [13] and Stefens [14], which are undergraduate textbooks used in courses on epidemiology [15]. I wonder why is that so.
 
-An important assumption of the SIR model is that recovered individuals are permanently immune to the disease. How much confidence that this is the case with COVID-19 are we rationally warranted? After all, there is evidence suggesting that recurrence and reinfection may occur:
-	https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(21)00662-0/fulltext
-	https://www.journalofinfection.com/article/S0163-4453(21)00043-8/fulltext (Brazil)
-	https://www.sciencedirect.com/science/article/pii/S187603412100006X
-	https://www.sciencedirect.com/science/article/pii/S1047279721000612?via%3Dihub
-	https://www.nature.com/articles/d41586-020-02948-4
+An important assumption of the SIR model is that recovered individuals are permanently immune to the disease. How much confidence are we rationally warranted that this is the case with COVID-19? After all, there is evidence suggesting that recurrence and reinfection may occur:
+  https://www.thelancet.com/journals/lancet/article/PIIS0140-6736(21)00662-0/fulltext
+  https://www.journalofinfection.com/article/S0163-4453(21)00043-8/fulltext (Brazil)
+  https://www.sciencedirect.com/science/article/pii/S187603412100006X
+  https://www.sciencedirect.com/science/article/pii/S1047279721000612?via%3Dihub
+  https://www.nature.com/articles/d41586-020-02948-4
 
 #---------------------------------------------------------------------------------------------------
 # References
@@ -152,7 +152,7 @@ An important assumption of the SIR model is that recovered individuals are perma
 
 [19] Naveca, F.G., Nascimento, V., de Souza, V.C. et al. COVID-19 in Amazonas, Brazil, was driven by the persistence of endemic lineages and P.1 emergence. Nat Med (2021). https://doi.org/10.1038/s41591-021-01378-7
 
-[20] (WHO) Weekly situation report, edition 41 of May 25, 2021 
+[20] (WHO) Weekly situation report, edition 41 of May 25, 2021
 {Variant of Concern (VOC); Variant of Interest (VOI)}
 
 [21] Zhang, Stephen X., Francisc Arroyo Marioli, and Renfei Gao. "A Second Wave? What Do People Mean By COVID Waves?-A Working Definition of Epidemic Waves." MedRxiv (2021).
@@ -164,21 +164,21 @@ An important assumption of the SIR model is that recovered individuals are perma
 #---------------------------------------------------------------------------------------------------
 
 A machine learning method that can be explored to solve the inverse problem in hands:
-	@Andre Lima  acho que é esse o artigo sobre o método usado no problema de inversão de dados sísmicos https://arxiv.org/pdf/2008.12833.pdf
-	É esse mesmo. E acho que o código que ele usou está aqui: https://github.com/gabrielspadon/ReGENN
+  @Andre Lima  acho que é esse o artigo sobre o método usado no problema de inversão de dados sísmicos https://arxiv.org/pdf/2008.12833.pdf
+  É esse mesmo. E acho que o código que ele usou está aqui: https://github.com/gabrielspadon/ReGENN
 
 Surveillance tools? (I was not able to download data from these tools)
-	[20:17, 21/04/2021] Diany Pressato: https://github.com/CSSEGISandData/COVID-19
-	[20:17, 21/04/2021] Diany Pressato: http://www.spcovid.net.br
+  [20:17, 21/04/2021] Diany Pressato: https://github.com/CSSEGISandData/COVID-19
+  [20:17, 21/04/2021] Diany Pressato: http://www.spcovid.net.br
 
 Books
 
-	(book) Finite difference methods for ordinary and partial differential equations
-	(book) Mathematical models in population biology and epidemiology (2nd ed)
-	(book) Stochastic population and epidemic models
+  (book) Finite difference methods for ordinary and partial differential equations
+  (book) Mathematical models in population biology and epidemiology (2nd ed)
+  (book) Stochastic population and epidemic models
 
 #---------------------------------------------------------------------------------------------------
-# Other (less-related) resources
+# Other resources pointed by team members
 #---------------------------------------------------------------------------------------------------
 
 Geometria Diferencial Discreta: https://www.youtube.com/playlist?list=PL9_jI1bdZmz0hIrNCMQW1YmZysAiIYSSS
@@ -186,7 +186,7 @@ Geometria Diferencial Discreta: https://www.youtube.com/playlist?list=PL9_jI1bdZ
 Social impacts of COVID-19: https://www.un.org/development/desa/dspd/world-social-report/2021-2.html
 
 [20:18, 21/04/2021] Diany Pressato:
-	https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.odeint.html#scipy.integrate.odeint
+  https://docs.scipy.org/doc/scipy/reference/generated/scipy.integrate.odeint.html#scipy.integrate.odeint
 
 [19:34, 05/05/2021] Diany Pressato: https://colab.research.google.com/drive/11neEJ-HC2DFwPRdZ9gMH7QFH5_E9cwor
 
@@ -200,18 +200,71 @@ https://drive.google.com/file/d/11H7pxtwMvtfPtrpoMWMKrDzcdBBGHdlM/view?usp=shari
 Tarefa que eu peguei:
 1-) estamos sem os dados dos recovered. Seria interessante olharmos a referência dos dados do Infotracker para o cálculo dos recovered, baseada na metodologia da Universidade de Melbourne ( http://covid19forecast.science.unimelb.edu.au/ ); resumindo, precisamos estimar o parâmetro Rdata;
 
-	Conforme nota publicada em https://www.viser.com.br/covid-19/sp-covid-info-tracker, "para aferir A(t) e Rec(t) tal como apresentada na plataforma on-line, foi considerada a Metodologia 2". Essa metodologia é descrita em [17].
-
-
+  Conforme nota publicada em https://www.viser.com.br/covid-19/sp-covid-info-tracker, "para aferir A(t) e Rec(t) tal como apresentada na plataforma on-line, foi considerada a Metodologia 2". Essa metodologia é descrita em [17].
 
 [6/27/2021 12:41:45 PM] Found the code of the model used by the Imperial College team to produce the simulations that were presented to the UK government back in 16 March 2020:
 
-(1) the code is available in this repository:
-	https://github.com/mrc-ide/covid-sim/tree/7282c948b940c8bd90d6afaa1575afb3848aa8b5
-	
-(2) for a little bit of useful history, see:
-	./articles/Modeling the pandemic - The simulations driving the world's response to COVID-19.pdf
-	./articles/Influential pandemic simulation verified by code checkers.pdf
+  (1) the code is available in this repository:
+    https://github.com/mrc-ide/covid-sim/tree/7282c948b940c8bd90d6afaa1575afb3848aa8b5
+
+  (2) for a little bit of useful history, see:
+    ./articles/Modeling the pandemic - The simulations driving the world's response to COVID-19.pdf
+    ./articles/Influential pandemic simulation verified by code checkers.pdf
+
+
+7/15/2021 3:00:26 PM
+
+Beginning to tackle the problem of modelling the dynamics of the COVID epidemic. Some ideas:
+
+# create class to tackle predictive tasks for univariate time series
+# (1) you pass a set of univariate time series -- e.g., series for several cities
+# (2) specify a (set of) model(s) -- in the end, we want to be able to explore ensembles
+# (3) fit the model to the each given series (and have it assessed -- save test results)
+# (4) ask for a prediction of lenght n
+# (5) create graphical aids to help making sense of the obtained results
+# (*) document the premises and relevant literature in the code
+#     (for easier reporting, in case this leads to a publication)
+
+# path to follow: threads of development
+
+# (1) let's start by using some of the series in the ICMC LABIC's dataset,
+#     then use the Brasil.io COVID dataset. To this effect, we need to change the preprocess.py module:
+#     (a) we need a map to relate territories to their estimated populations
+#         (and maybe also some indicators gathered from the last general elections?)
+#     (b) we need to create an option to have time series segmented by territory
+#         (i.e., each territory is combined with their SIRD series)
+
+# (2) select a single, simple-to-understand model,
+#     then move towards memory-based model,
+#     then move towards representation-based model,
+#     and then to ensemble of models
+#     -- an initial list of candidate models: kNN-TSPi,
+#                                             SIRD,
+#                                             SARIMA,
+#                                             kNN-SAX,
+#                                             kNN-SAX with our probabilistic representation,
+#                                             models based on ideas explored by Geoff Webb's team
+#                                             (https://www.youtube.com/watch?v=SOnHXymw48k&t=1071s)
+
+# (3) let's start by replicating Parmezan et al.'s framework of evaluation,
+#     and then move towards performance metrics used in Funk et al.
+      -- we need a dataset of time series. let's use the time series of different cities
+
+# *** Is it true that [the dynamics of the disease in City-1 is more similar to that of City-2 than that of City-3 if City-1 is nearer to City-2 than to City-3]?
+
+# *** Can we use the change in direction (i.e., increase or decrease) in a series for the City-1 to predict the change in direction for a series for a neighbouring City-2? I am seeking a way to approximate systematic population movements.
+
+# (4) this one is a bit tricky. let's adopt n=14 (2 weeks). Rationale:
+#     (a) Funk et al. concluded that predictions beyond this timeframe are no good to orient public policy
+#     (b) It seems that 2 weeks is a reasonable timeframe to update/review public policies in Brazil;
+#         e.g., SS/SP used this timeframe in their intervention plan: http://www.legislacao.sp.gov.br/legislacao/dg280202.nsf/5fb5269ed17b47ab83256cfb00501469/35ea1f3341ab9b9c83258577004cd65e?OpenDocument&Highlight=0,64.994
+
+
+# ideas to communicate and engage
+# (1) [gamification] given a basic framework (developed here), let's set up (or join an existing) a Kaggle competition; create a video to explain the framework and use our meetings to address doubts and check progress
+
+[7/17/2021 11:19:58 PM] Downloaded Parmezan's dataset from http://sites.labic.icmc.usp.br/icmc_tspr/index.php/datasets
+
 
 
 
