@@ -392,7 +392,6 @@ def createBoL(sourceData, timeline, date2t, outcomes, ma_window = 1, coreModel =
   # initialises the book of life
   bol = defaultdict(lambda: defaultdict(int))
   for (territory, date, newCases, newDeaths) in sourceData:
-
     # records cases and deaths reported in the surveillance system
     # (i.e., these variables are measured)
     bol[date][ECO_CONFIRMED] = newCases
