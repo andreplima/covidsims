@@ -167,9 +167,10 @@ A machine learning method that can be explored to solve the inverse problem in h
   @Andre Lima  acho que é esse o artigo sobre o método usado no problema de inversão de dados sísmicos https://arxiv.org/pdf/2008.12833.pdf
   É esse mesmo. E acho que o código que ele usou está aqui: https://github.com/gabrielspadon/ReGENN
 
-Surveillance tools? (I was not able to download data from these tools)
+Surveillance archives (I was not able to download data from these tools)
   [20:17, 21/04/2021] Diany Pressato: https://github.com/CSSEGISandData/COVID-19
   [20:17, 21/04/2021] Diany Pressato: http://www.spcovid.net.br
+  [7/19/2021 1:20:16 PM] https://brasil.io/dataset/covid19/caso_full/
 
 Books
 
@@ -217,44 +218,47 @@ Tarefa que eu peguei:
 Beginning to tackle the problem of modelling the dynamics of the COVID epidemic. Some ideas:
 
 # create class to tackle predictive tasks for univariate time series
-# (1) you pass a set of univariate time series -- e.g., series for several cities
-# (2) specify a (set of) model(s) -- in the end, we want to be able to explore ensembles
+# (1) you pass a set of univariate time series -- e.g., SIRD series for several cities
+# (2) specify a (set of) model(s) -- we want to explore ensembles of (interpretable) estimators
 # (3) fit the model to the each given series (and have it assessed -- save test results)
-# (4) ask for a prediction of lenght n
+# (4) ask for a prediction of lenght h
 # (5) create graphical aids to help making sense of the obtained results
-# (*) document the premises and relevant literature in the code
+# (*) document the premises and relevant literature along the code
 #     (for easier reporting, in case this leads to a publication)
 
-# path to follow: threads of development
+# path to follow: threads/thrusts of development
 
 # (1) let's start by using some of the series in the ICMC LABIC's dataset,
-#     then use the Brasil.io COVID dataset. To this effect, we need to change the preprocess.py module:
+#     then move to Brasil.io COVID dataset. To this effect, we need to change the preprocess.py module:
 #     (a) we need a map to relate territories to their estimated populations
 #         (and maybe also some indicators gathered from the last general elections?)
 #     (b) we need to create an option to have time series segmented by territory
 #         (i.e., each territory is combined with their SIRD series)
 
-# (2) select a single, simple-to-understand model,
-#     then move towards memory-based model,
-#     then move towards representation-based model,
+# (2) select a single, simple-to-understand (i.e., interpretable) model,
+#     then move towards memory-based models,
+#     then move towards representation-based models,
 #     and then to ensemble of models
-#     -- an initial list of candidate models: kNN-TSPi,
-#                                             SIRD,
-#                                             SARIMA,
-#                                             kNN-SAX,
-#                                             kNN-SAX with our probabilistic representation,
-#                                             models based on ideas explored by Geoff Webb's team
-#                                             (https://www.youtube.com/watch?v=SOnHXymw48k&t=1071s)
+#     -- an initial list of candidate models:
+#        kNN-TSPi,
+#        SIRD,
+#        SARIMA,
+#        kNN-SAX,
+#        kNN-SAX with our probabilistic representation,
+#        ReGENN (https://drive.google.com/file/d/1Lq3j3PwwBG_4ekDOoQHHkhWGbGY01DM9/view)
+#               (https://arxiv.org/pdf/2008.12833.pdf)
+#        models based on ideas explored by Geoff Webb's team
+#        (https://www.youtube.com/watch?v=SOnHXymw48k&t=1071s)
 
 # (3) let's start by replicating Parmezan et al.'s framework of evaluation,
 #     and then move towards performance metrics used in Funk et al.
-      -- we need a dataset of time series. let's use the time series of different cities
+      -- we need a dataset of time series. let's use series of different cities
 
 # *** Is it true that [the dynamics of the disease in City-1 is more similar to that of City-2 than that of City-3 if City-1 is nearer to City-2 than to City-3]?
 
-# *** Can we use the change in direction (i.e., increase or decrease) in a series for the City-1 to predict the change in direction for a series for a neighbouring City-2? I am seeking a way to approximate systematic population movements.
+# *** Can we use the change in direction (i.e., increase or decrease) in a series for the City-1 to predict the change in direction for a series for a neighbouring City-2? I am seeking a way to approximate systematic population movements. Spadon's methods may be useful in answering this question.
 
-# (4) this one is a bit tricky. let's adopt n=14 (2 weeks). Rationale:
+# (4) this one is a bit tricky. let's adopt h=14 (2 weeks). Rationale:
 #     (a) Funk et al. concluded that predictions beyond this timeframe are no good to orient public policy
 #     (b) It seems that 2 weeks is a reasonable timeframe to update/review public policies in Brazil;
 #         e.g., SS/SP used this timeframe in their intervention plan: http://www.legislacao.sp.gov.br/legislacao/dg280202.nsf/5fb5269ed17b47ab83256cfb00501469/35ea1f3341ab9b9c83258577004cd65e?OpenDocument&Highlight=0,64.994
@@ -265,6 +269,13 @@ Beginning to tackle the problem of modelling the dynamics of the COVID epidemic.
 
 [7/17/2021 11:19:58 PM] Downloaded Parmezan's dataset from http://sites.labic.icmc.usp.br/icmc_tspr/index.php/datasets
 
+[7/19/2021 12:31:18 PM]
+This thread will be freezed until next week, so I outline the next steps to be taken.
+(1) The inverse.py script succeeded in solving the inverse problem for COVID data (from Brasil-io), but it fails with simulated data (generated using SIRD.py script). It seems that it has to do with the fact that the simulation uses RK2 to simulate the SIRD model, and Euler's method is being used in the inverse.py script. Next step: adapt inverse.py to use RK2 as well. This will require going back to the bench to reformulate the estimation and reconstruction procedures.
+
+(2) Inspecting the results for the inverse problem for the simulated data made me realise that we are seeking an 'theoryfull' estimator (in Valiant's sense), instead of a 'theoryless' estimator (like machine-learning or statistical methods), because we need interpretable models in health applications.
+
+(3) What about inviting Spadon to give us a talk about ReGENN?
 
 
 
