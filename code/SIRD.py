@@ -1,9 +1,18 @@
+"""
+Adatped from code made available in:
+  Okabe, Yutaka, and Akira Shudo. A Mathematical Model of Epidemics - A Tutorial for Students.
+    Mathematics 8.7 (2020): 1174.
+"""
+
 import math
 import matplotlib.pyplot as plt
 
-ECO_MAXDAYS     = 356 * 2
+from os.path    import join
+from sharedDefs import getMountedOn, serialise
+
+ECO_MAXDAYS     = 356 # * 2
 ECO_RESOLUTION  = 1E-3
-ECO_GRANULARITY = 100
+ECO_GRANULARITY = 1E3
 ECO_PRECISION   = 1E-6
 
 def plot(N, Ts, Ss, Is, Rs, Ds):
@@ -24,19 +33,17 @@ def plot(N, Ts, Ss, Is, Rs, Ds):
 def main():
 
   # free parameters of the SIRD model
-  N = 10000                 # population size
-  I = 500                   # initial number of infective individuals
-  R = 2000                  # initial number of recovered individuals
-  D = 0                     # initial number of deceased  individuals
-  m = 20                    # average number of persons contacted by an infective individual (per day)
-  p = 0.025                 # probability of transmission during contact with an infective individual
-  e = 14                    # average number of days an individual remains infective
-  gamma_d = 0.02            # rate of death
+  N = 1E4                   # population size
+  I0 = 10                   # initial number of infective individuals
+  R0 = 0                    # initial number of recovered individuals
+  D0 = 0                    # initial number of deceased  individuals
+  beta = 0.05               # rate of infection
+  e = 18                    # average number of days an individual remains infective
+  gamma_d = 0.01            # rate of death
+  gamma_r = 0.02            # rate of recovery
 
   # implied parameters
-  gamma_r = 1/e - gamma_d   # rate of recovery
   gamma = gamma_r + gamma_d # reciprocal of the expected duration (in days) of infection
-  beta = m * p              # rate of infection
 
   # initialises the time series that describe the dynamics of the epidemic
   (Ts, Ss, Is, Rs, Ds) = ([], [], [], [], [])
@@ -51,7 +58,7 @@ def main():
   c  = 0
   t  = 0
   dt = ECO_RESOLUTION   # size of the simulation step (delta t)
-  S  = N - I - R        # initial population of susceptibles
+  (S, I, R, D) = (N - I0 - R0 - D0, I0, R0, D0)
   while t < ECO_MAXDAYS and round(I, 0) > 0:
 
     if(c % ECO_GRANULARITY == 0):
@@ -81,7 +88,7 @@ def main():
     dR2 = dR(I2)
     dD2 = dD(I2)
 
-    # Step 3 - updates the SIRD variables with the average of the differentials
+    # Step 3 - updates the SIRD variables using the average of the differentials
     S = S + (dS1 + dS2) / 2 * dt
     I = I + (dI1 + dI2) / 2 * dt
     R = R + (dR1 + dR2) / 2 * dt
@@ -90,8 +97,31 @@ def main():
     t = t + dt
     c += 1
 
+  # plots the results
   print(S, I, R, D, t)
   plot(N, Ts, Ss, Is, Rs, Ds)
+
+  # saves the results for inspection (and use in the inverse problem)
+  T = len(Ts)
+  timeline = Ts
+  reports = {'S': Ss, 'I': Is, 'R': Rs, 'D': Ds}
+  (dS, dI, dR, dD) = ([-I0], [I0 - R0 - D0], [R0], [D0])
+  for t in range(1, T):
+    dS.append(Ss[t] - Ss[t-1])
+    dI.append(Is[t] - Is[t-1])
+    dR.append(Rs[t] - Rs[t-1])
+    dD.append(Ds[t] - Ds[t-1])
+  changes = {'S': dS, 'I': dI, 'R': dR, 'D': Ds}
+
+  sourcepath = [getMountedOn(), 'Task Stage', 'Task - covidsims', 'covidsims', 'results', 'P01', 'C1']
+  serialise(timeline, join(*sourcepath, 'timeline'))
+  serialise(reports,  join(*sourcepath, 'reports'))
+  serialise(changes,  join(*sourcepath, 'changes'))
+  print(len(timeline))
+  print(len(reports['S']), len(changes['S']))
+  print(len(reports['I']), len(changes['I']))
+  print(len(reports['R']), len(changes['R']))
+  print(len(reports['D']), len(changes['D']))
 
 if __name__ == "__main__":
 

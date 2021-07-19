@@ -1,3 +1,9 @@
+"""
+Adatped from code made available in:
+  Okabe, Yutaka, and Akira Shudo. A Mathematical Model of Epidemics - A Tutorial for Students.
+    Mathematics 8.7 (2020): 1174.
+"""
+
 import math
 import matplotlib.pyplot as plt
 
@@ -23,11 +29,11 @@ def plot(N, Ts, Ss, Is, Rs):
 def main():
 
   # free parameters of the SIR model
-  N = 10000
-  I = 10
-  R = 0
-  beta  = 0.5
-  gamma = 0.2
+  N = 10000      # the size of the population
+  I = 10         # the initial number of infective individuals
+  R = 0          # the initial number of removed individuals (i.e., recovered and deceased)
+  beta  = 0.5    # rate of transmission
+  gamma = 0.2    # rate of removal
 
   # initialises the time series that describe the dynamics of the epidemic
   Ts = [ ]
@@ -39,7 +45,7 @@ def main():
   dS = lambda S, I: -beta * S * (I/N)
   dI = lambda S, I:  beta * S * (I/N) - gamma * I
 
-  # simulates the dynamics of the epidemic
+  # simulates the dynamics of the epidemic (using Runge-Kutta method - RK2?)
   c  = 0
   t  = 0
   dt = ECO_RESOLUTION
@@ -51,27 +57,26 @@ def main():
       Ss.append(S)
       Is.append(I)
       Rs.append(R)
-      #xxx add Ds (separate recovered from deceased)
 
       if((N - S - I - R) > ECO_PRECISION):
         print('-- Bad accounting! S + I + R = {0}'.format(S + I + R))
 
-    # Step 1 - computes the differentials of S and I in time t
+    # Step 1 - computes the differentials of the SIR variables at time t
     dS1 = dS(S, I)
     dI1 = dI(S, I)
 
-    # Step 1 - computes the differentials of S and I in time t + dt
+    # Step 2 - computes the differentials of the SIR variables at time t + dt
     S2  = S + dS1 * dt
     I2  = I + dI1 * dt
     dS2 = dS(S2, I2)
     dI2 = dI(S2, I2)
 
-    # update
+    # Step 3 - updates the SIR variables using the average of the differentials
     S = S + (dS1 + dS2) / 2 * dt
     I = I + (dI1 + dI2) / 2 * dt
     R = N - S - I
-    t = t + dt
 
+    t = t + dt
     c += 1
 
   print(S, I, R, t)
