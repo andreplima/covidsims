@@ -7,7 +7,6 @@ from sharedDefs  import ECO_PRECISION
 from sharedDefs  import ECO_SUSCEPTIBLE, ECO_INFECTIOUS, ECO_RECOVERED, ECO_DECEASED, ECO_CONFIRMED
 from sharedDefs  import mse
 
-
 ECO_SERIESTYPES = [ECO_SUSCEPTIBLE, ECO_INFECTIOUS, ECO_RECOVERED, ECO_DECEASED]
 
 def reformat(D, timeline, start = 0):
@@ -63,7 +62,7 @@ def saveSeries(timeline, reports, changes, S, I, R, D, dS, dI, dR, dD, N, gamma,
 
 def main():
 
-  ## recovers the preprocessed time series
+  # recovers the preprocessed time series
   #sourcepath = [getMountedOn(), 'Task Stage', 'Task - covidsims', 'covidsims', 'results', 'T01', 'BR']
   #data = deserialise(join(*sourcepath, 'data')) # data[date][seriesType] = int (accumulated)
   #bol  = deserialise(join(*sourcepath, 'bol'))  # bol[date][seriesType]  = int (changes)
@@ -97,6 +96,11 @@ def main():
          N / (reports[ECO_SUSCEPTIBLE][t]     * reports[ECO_INFECTIOUS][t]) )
     beta.append(b)
 
+		# xxx A mistery to me: why beta estimated this way does not work?
+    #b = N / (reports[ECO_SUSCEPTIBLE][t] * reports[ECO_INFECTIOUS][t])
+    #beta.append(b)
+
+
   # adds another set of parameters for the last time point (null because there is no look-ahead)
   gamma.append(0.0)
   gamma_r.append(0.0)
@@ -109,12 +113,13 @@ def main():
   R  = [reports[ECO_RECOVERED][0]]
   D  = [reports[ECO_DECEASED][0]]
   S  = [reports[ECO_SUSCEPTIBLE][0]]
-  (dS, dI, dR, dD) = ([-I[0]], [I[0]], [0], [0])
+  (dS, dI, dR, dD) = ([-I[0]], [I[0]], [0], [0]) # 'Star' premise operating here!
 
-  # reconstructs the original series from the initial surveillance and estimated rate parameters
+  # reconstructs the original series from the initial surveillance data and 
+  # the series of estimated rate parameters
   for t in range(T - 1):
     print(t)
-    dR.append(gamma_r[t] * I[t])
+    dR.append(gamma_r[t] * I[t]) # note that this corresponds to dR[t+1] = gamma_r[t] * I[t]
     dD.append(gamma_d[t] * I[t])
     dS.append(-beta[t] * S[t] * I[t]/N)
     dI.append(-dS[-1] - (dR[-1] + dD[-1]))  # solved by degree of freedom

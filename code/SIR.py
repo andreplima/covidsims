@@ -59,7 +59,7 @@ def main():
       Rs.append(R)
 
       if((N - S - I - R) > ECO_PRECISION):
-        print('-- Bad accounting! S + I + R = {0}'.format(S + I + R))
+        print('-- Poor accounting! S + I + R = {0}'.format(S + I + R))
 
     # Step 1 - computes the differentials of the SIR variables at time t
     dS1 = dS(S, I)

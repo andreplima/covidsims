@@ -37,22 +37,22 @@ def main():
   I0 = 10                   # initial number of infective individuals
   R0 = 0                    # initial number of recovered individuals
   D0 = 0                    # initial number of deceased  individuals
-  beta = 0.05               # rate of infection
-  e = 18                    # average number of days an individual remains infective
+  beta = 0.07               # rate of infection
   gamma_d = 0.01            # rate of death
   gamma_r = 0.02            # rate of recovery
 
   # implied parameters
   gamma = gamma_r + gamma_d # reciprocal of the expected duration (in days) of infection
+  e = 1 / gamma             # average number of days an individual remains infective
 
   # initialises the time series that describe the dynamics of the epidemic
   (Ts, Ss, Is, Rs, Ds) = ([], [], [], [], [])
 
   # defines the diferentials for the SIRD variables
   dS = lambda S, I: -beta * S * (I/N)
-  dI = lambda S, I:  beta * S * (I/N) - gamma * I
-  dR = lambda I: gamma_r * I
-  dD = lambda I: gamma_d * I
+  dI = lambda S, I:  beta * S * (I/N) - gamma   * I
+  dR = lambda    I:                     gamma_r * I
+  dD = lambda    I:                     gamma_d * I
 
   # simulates the dynamics of the epidemic
   c  = 0
@@ -69,7 +69,7 @@ def main():
       Ds.append(D)
 
       if((N - S - I - R - D) > ECO_PRECISION):
-        print('-- Bad accounting! S + I + R + D = {0}'.format(S + I + R + D))
+        print('-- Poor accounting! S + I + R + D = {0}'.format(S + I + R + D))
 
     # Step 1 - computes the differentials of the SIRD variables at time t
     dS1 = dS(S, I)
@@ -101,7 +101,7 @@ def main():
   print(S, I, R, D, t)
   plot(N, Ts, Ss, Is, Rs, Ds)
 
-  # saves the results for inspection (and use in the inverse problem)
+  # saves the results for inspection (and use as synthetic series in the inverse.py)
   T = len(Ts)
   timeline = Ts
   reports = {'S': Ss, 'I': Is, 'R': Rs, 'D': Ds}

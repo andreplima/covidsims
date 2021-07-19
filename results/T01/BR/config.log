@@ -1,6 +1,6 @@
-[20210718111448] Running essay with specs recovered from [..\configs\T01\BR\preprocess_T01_BR.cfg]
+[20210719105358] Running essay with specs recovered from [..\configs\t01\br\preprocess_T01_BR.cfg]
 
-[20210718111448] Processing essay configuration file [..\configs\T01\BR\preprocess_T01_BR.cfg]
+[20210719105358] Processing essay configuration file [..\configs\t01\br\preprocess_T01_BR.cfg]
 ESSAY_CONFIGID : BR (as <class 'str'>)
 ESSAY_ESSAYID : T01 (as <class 'str'>)
 ESSAY_LABEL : Surveillance data for BR (default settings for a SIRD model) (as <class 'str'>)
@@ -17,15 +17,15 @@ PARAM_SOURCEPATH : ['C:\\USERS\\ANDRE\\', 'Task Stage', 'Task - covidsims', 'cov
 PARAM_TARGETPATH : ['C:\\USERS\\ANDRE\\', 'Task Stage', 'Task - covidsims', 'covidsims', 'results'] (as <class 'list'>)
 PARAM_TERRITORY : ['*, *, *'] (as <class 'list'>)
 
-[20210718111448] Loading raw data
-[20210718111616] -- 509 records have been loaded.
-[20210718111616] -- samples:
-[20210718111616]    (['*, *, *'], datetime.datetime(2020, 2, 25, 0, 0), 2, 0)
-[20210718111616]    (['*, *, *'], datetime.datetime(2021, 7, 17, 0, 0), 30850, 777)
-[20210718111616] Creating the Book of Life
-[20210718111616] -- 551 records have been created.
-[20210718111616] Playing the Book of Life forward
-[20210718111616] -- 510 records have been created.
-[20210718111616] Saving the results
-[20210718111616] Results and inspection logs were saved in [C:\USERS\ANDRE\Task Stage\Task - covidsims\covidsims\results\T01\BR]
-[20210718111616] Finished essay with specs recovered from [..\configs\T01\BR\preprocess_T01_BR.cfg]
+[20210719105358] Loading raw data
+[20210719105528] -- 509 records have been loaded.
+[20210719105528] -- samples:
+[20210719105528]    (['*, *, *'], datetime.datetime(2020, 2, 25, 0, 0), 2, 0)
+[20210719105528]    (['*, *, *'], datetime.datetime(2021, 7, 17, 0, 0), 30850, 777)
+[20210719105528] Creating the Book of Life
+[20210719105528] -- 551 records have been created.
+[20210719105528] Playing the Book of Life forward
+[20210719105528] -- 510 records have been created.
+[20210719105528] Saving the results
+[20210719105528] Results and inspection logs were saved in [C:\USERS\ANDRE\Task Stage\Task - covidsims\covidsims\results\T01\BR]
+[20210719105528] Finished essay with specs recovered from [..\configs\t01\br\preprocess_T01_BR.cfg]
