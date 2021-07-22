@@ -60,23 +60,33 @@ def saveSeries(timeline, reports, changes, S, I, R, D, dS, dI, dR, dD, N, gamma,
 
   return '\n'.join(content)
 
-def main():
+def loadRealData():
 
-  # recovers the preprocessed time series
-  #sourcepath = [getMountedOn(), 'Task Stage', 'Task - covidsims', 'covidsims', 'results', 'T01', 'BR']
-  #data = deserialise(join(*sourcepath, 'data')) # data[date][seriesType] = int (accumulated)
-  #bol  = deserialise(join(*sourcepath, 'bol'))  # bol[date][seriesType]  = int (changes)
-  #timeline = deserialise(join(*sourcepath, 'timeline')) # timeline ~ [date, ...] sorted
-  #T = len(timeline)
-  #
-  ## reformats the recovered data to a more suitable format
-  #reports = reformat(data, timeline) # daily reported values of the SIRD variables (reports[seriesType] = [val, ...])
-  #changes = reformat(bol,  timeline) # daily changes of the SIRD variables         (changes[seriesType] = [val, ...])
+  # recovers the preprocessed time series for COVID-19 download from Brasil-io
+  sourcepath = [getMountedOn(), 'Task Stage', 'Task - covidsims', 'covidsims', 'results', 'T01', 'BR']
+  data = deserialise(join(*sourcepath, 'data')) # data[date][seriesType] = int (accumulated)
+  bol  = deserialise(join(*sourcepath, 'bol'))  # bol[date][seriesType]  = int (changes)
+  timeline = deserialise(join(*sourcepath, 'timeline')) # timeline ~ [date, ...] sorted
+
+  # reformats the recovered data to a more suitable format
+  reports = reformat(data, timeline) # daily reported values of the SIRD variables (reports[seriesType] = [val, ...])
+  changes = reformat(bol,  timeline) # daily changes of the SIRD variables         (changes[seriesType] = [val, ...])
+
+  return (timeline, reports, changes, sourcepath)
+
+def loadSimulatedData():
 
   sourcepath = [getMountedOn(), 'Task Stage', 'Task - covidsims', 'covidsims', 'results', 'P01', 'C1']
   timeline = deserialise(join(*sourcepath, 'timeline')) # timeline ~ [float, ...] sorted
   reports  = deserialise(join(*sourcepath, 'reports'))  # daily reported values of the SIRD variables (reports[seriesType] = [val, ...])
   changes  = deserialise(join(*sourcepath, 'changes'))  # daily changes of the SIRD variables         (changes[seriesType] = [val, ...])
+
+  return (timeline, reports, changes, sourcepath)
+
+def main():
+
+  # recovers preprocessed time series
+  (timeline, reports, changes, sourcepath) =  loadSimulatedData()
   T = len(timeline)
 
   # obtains estimates for rate parameters of the SIRD model
@@ -96,10 +106,9 @@ def main():
          N / (reports[ECO_SUSCEPTIBLE][t]     * reports[ECO_INFECTIOUS][t]) )
     beta.append(b)
 
-		# xxx A mistery to me: why beta estimated this way does not work?
+    # xxx A mistery to me: why beta estimated this way does not work?
     #b = N / (reports[ECO_SUSCEPTIBLE][t] * reports[ECO_INFECTIOUS][t])
     #beta.append(b)
-
 
   # adds another set of parameters for the last time point (null because there is no look-ahead)
   gamma.append(0.0)
@@ -115,7 +124,7 @@ def main():
   S  = [reports[ECO_SUSCEPTIBLE][0]]
   (dS, dI, dR, dD) = ([-I[0]], [I[0]], [0], [0]) # 'Star' premise operating here!
 
-  # reconstructs the original series from the initial surveillance data and 
+  # reconstructs the original series from the initial surveillance data and
   # the series of estimated rate parameters
   for t in range(T - 1):
     print(t)

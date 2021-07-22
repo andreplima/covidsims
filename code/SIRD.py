@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 from os.path    import join
 from sharedDefs import getMountedOn, serialise
 
-ECO_MAXDAYS     = 356 # * 2
-ECO_RESOLUTION  = 1E-3
-ECO_GRANULARITY = 1E3
+ECO_MAXDAYS     = 356
+ECO_RESOLUTION  = 1E-3   # size of the simulation step (delta t)
+ECO_GRANULARITY = 1E3    # rate at which results are stored (e.g., 1 snapshot each 1K steps)
 ECO_PRECISION   = 1E-6
 
 def plot(N, Ts, Ss, Is, Rs, Ds):
@@ -33,7 +33,7 @@ def plot(N, Ts, Ss, Is, Rs, Ds):
 def main():
 
   # free parameters of the SIRD model
-  N = 1E4                   # population size
+  N  = 1E4                  # population size
   I0 = 10                   # initial number of infective individuals
   R0 = 0                    # initial number of recovered individuals
   D0 = 0                    # initial number of deceased  individuals
@@ -41,7 +41,7 @@ def main():
   gamma_d = 0.01            # rate of death
   gamma_r = 0.02            # rate of recovery
 
-  # implied parameters
+  # constrained parameters
   gamma = gamma_r + gamma_d # reciprocal of the expected duration (in days) of infection
   e = 1 / gamma             # average number of days an individual remains infective
 
@@ -54,10 +54,10 @@ def main():
   dR = lambda    I:                     gamma_r * I
   dD = lambda    I:                     gamma_d * I
 
-  # simulates the dynamics of the epidemic
+  # simulates the dynamics of the epidemic using a Runge-Kutta method (RK2)
   c  = 0
   t  = 0
-  dt = ECO_RESOLUTION   # size of the simulation step (delta t)
+  dt = ECO_RESOLUTION   
   (S, I, R, D) = (N - I0 - R0 - D0, I0, R0, D0)
   while t < ECO_MAXDAYS and round(I, 0) > 0:
 
@@ -69,7 +69,7 @@ def main():
       Ds.append(D)
 
       if((N - S - I - R - D) > ECO_PRECISION):
-        print('-- Poor accounting! S + I + R + D = {0}'.format(S + I + R + D))
+        print('-- Poor accounting! S + I + R + D = {0} <> {1} = N'.format(S + I + R + D, N))
 
     # Step 1 - computes the differentials of the SIRD variables at time t
     dS1 = dS(S, I)
@@ -101,7 +101,7 @@ def main():
   print(S, I, R, D, t)
   plot(N, Ts, Ss, Is, Rs, Ds)
 
-  # saves the results for inspection (and use as synthetic series in the inverse.py)
+  # saves the results for inspection (and use as synthetic series in the inverse)
   T = len(Ts)
   timeline = Ts
   reports = {'S': Ss, 'I': Is, 'R': Rs, 'D': Ds}
