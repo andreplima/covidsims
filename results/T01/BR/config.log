@@ -1,6 +1,6 @@
-[20210719105358] Running essay with specs recovered from [..\configs\t01\br\preprocess_T01_BR.cfg]
+[20210722133246] Running essay with specs recovered from [..\configs\T01\BR\preprocess_T01_BR.cfg]
 
-[20210719105358] Processing essay configuration file [..\configs\t01\br\preprocess_T01_BR.cfg]
+[20210722133246] Processing essay configuration file [..\configs\T01\BR\preprocess_T01_BR.cfg]
 ESSAY_CONFIGID : BR (as <class 'str'>)
 ESSAY_ESSAYID : T01 (as <class 'str'>)
 ESSAY_LABEL : Surveillance data for BR (default settings for a SIRD model) (as <class 'str'>)
@@ -13,19 +13,19 @@ PARAM_MASK_ERRORS : True (as <class 'bool'>)
 PARAM_MA_WINDOW : 7 (as <class 'int'>)
 PARAM_OUTCOMES : [(0.81, 14, 0.05), (0.14, 28, 0.06), (0.05, 42, 0.1)] (as <class 'list'>)
 PARAM_POPSIZES : {'AM, AM, Manaus': 2219580, 'AM, AM, *': 4207714, 'SP, SP, Serrana': 45644, 'SP, SP, *': 46289333, 'SP, SP, Itapevi': 240961, 'SP, SP, TremembÃ©': 47714, '*, *, *': 211755692} (as <class 'dict'>)
-PARAM_SOURCEPATH : ['C:\\USERS\\ANDRE\\', 'Task Stage', 'Task - covidsims', 'covidsims', 'datasets', 'brasil-io'] (as <class 'list'>)
-PARAM_TARGETPATH : ['C:\\USERS\\ANDRE\\', 'Task Stage', 'Task - covidsims', 'covidsims', 'results'] (as <class 'list'>)
+PARAM_SOURCEPATH : ['D:\\', 'Task Stage', 'Task - covidsims', 'covidsims', 'datasets', 'brasil-io'] (as <class 'list'>)
+PARAM_TARGETPATH : ['D:\\', 'Task Stage', 'Task - covidsims', 'covidsims', 'results'] (as <class 'list'>)
 PARAM_TERRITORY : ['*, *, *'] (as <class 'list'>)
 
-[20210719105358] Loading raw data
-[20210719105528] -- 509 records have been loaded.
-[20210719105528] -- samples:
-[20210719105528]    (['*, *, *'], datetime.datetime(2020, 2, 25, 0, 0), 2, 0)
-[20210719105528]    (['*, *, *'], datetime.datetime(2021, 7, 17, 0, 0), 30850, 777)
-[20210719105528] Creating the Book of Life
-[20210719105528] -- 551 records have been created.
-[20210719105528] Playing the Book of Life forward
-[20210719105528] -- 510 records have been created.
-[20210719105528] Saving the results
-[20210719105528] Results and inspection logs were saved in [C:\USERS\ANDRE\Task Stage\Task - covidsims\covidsims\results\T01\BR]
-[20210719105528] Finished essay with specs recovered from [..\configs\t01\br\preprocess_T01_BR.cfg]
+[20210722133246] Loading raw data
+[20210722133348] -- 513 records have been loaded.
+[20210722133348] -- samples:
+[20210722133348]    (['*, *, *'], datetime.datetime(2020, 2, 25, 0, 0), 2, 0)
+[20210722133348]    (['*, *, *'], datetime.datetime(2021, 7, 21, 0, 0), 56235, 1435)
+[20210722133348] Creating the Book of Life
+[20210722133348] -- 555 records have been created.
+[20210722133348] Playing the Book of Life forward
+[20210722133348] -- 514 records have been created.
+[20210722133348] Saving the results
+[20210722133348] Results and inspection logs were saved in [D:\Task Stage\Task - covidsims\covidsims\results\T01\BR]
+[20210722133348] Finished essay with specs recovered from [..\configs\T01\BR\preprocess_T01_BR.cfg]
