@@ -1,16 +1,16 @@
 """
 Adatped from code made available in:
-  Okabe, Yutaka, and Akira Shudo. A Mathematical Model of Epidemics - A Tutorial for Students.
+  Okabe, Yutaka, and Akira Shudo. A mathematical model of epidemics - A tutorial for students.
     Mathematics 8.7 (2020): 1174.
 """
 
 import math
 import matplotlib.pyplot as plt
 
-ECO_MAXDAYS     = 356 * 2
-ECO_RESOLUTION  = 1E-3
-ECO_GRANULARITY = 100
-ECO_PRECISION   = 1E-6
+ECO_MAXDAYS     = 356
+ECO_RESOLUTION  = 1E-3   # size of the simulation step (delta t)
+ECO_GRANULARITY = 1E+3   # rate at which results are stored (e.g., 1 snapshot each 1K steps)
+ECO_PRECISION   = 1E-6   # minimum difference between two floats required to consider them discernible
 
 def plot(N, Ts, Ss, Is, Rs):
 
@@ -45,12 +45,14 @@ def main():
   dS = lambda S, I: -beta * S * (I/N)
   dI = lambda S, I:  beta * S * (I/N) - gamma * I
 
-  # simulates the dynamics of the epidemic (using Runge-Kutta method - RK2?)
+  # simulates the dynamics of the epidemic (using Heun's variant of the Runge-Kutta method RK2)
+  # see https://nm.mathforcollege.com/chapter-08-03-runge-kutta-2nd-order-method/
+  # and https://autarkaw.org/2008/07/28/comparing-runge-kutta-2nd-order-methods/
   c  = 0
   t  = 0
   dt = ECO_RESOLUTION
   S  = N - I - R
-  while t < ECO_MAXDAYS and round(I, 0) > 0:
+  while (c // ECO_GRANULARITY) < ECO_MAXDAYS and round(I, 0) > 0:
 
     if(c % ECO_GRANULARITY == 0):
       Ts.append(t)

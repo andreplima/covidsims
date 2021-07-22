@@ -13,7 +13,7 @@ from sharedDefs import getMountedOn, serialise
 ECO_MAXDAYS     = 356
 ECO_RESOLUTION  = 1E-3   # size of the simulation step (delta t)
 ECO_GRANULARITY = 1E3    # rate at which results are stored (e.g., 1 snapshot each 1K steps)
-ECO_PRECISION   = 1E-6
+ECO_PRECISION   = 1E-6   # minimum difference between two floats required to consider them discernible
 
 def plot(N, Ts, Ss, Is, Rs, Ds):
 
@@ -54,12 +54,14 @@ def main():
   dR = lambda    I:                     gamma_r * I
   dD = lambda    I:                     gamma_d * I
 
-  # simulates the dynamics of the epidemic using a Runge-Kutta method (RK2)
+  # simulates the dynamics of the epidemic (using Heun's variant of the Runge-Kutta method RK2)
+  # see https://nm.mathforcollege.com/chapter-08-03-runge-kutta-2nd-order-method/
+  # and https://autarkaw.org/2008/07/28/comparing-runge-kutta-2nd-order-methods/
   c  = 0
   t  = 0
-  dt = ECO_RESOLUTION   
+  dt = ECO_RESOLUTION
   (S, I, R, D) = (N - I0 - R0 - D0, I0, R0, D0)
-  while t < ECO_MAXDAYS and round(I, 0) > 0:
+  while (c // ECO_GRANULARITY) < ECO_MAXDAYS and round(I, 0) > 0:
 
     if(c % ECO_GRANULARITY == 0):
       Ts.append(t)
@@ -105,13 +107,13 @@ def main():
   T = len(Ts)
   timeline = Ts
   reports = {'S': Ss, 'I': Is, 'R': Rs, 'D': Ds}
-  (dS, dI, dR, dD) = ([-I0], [I0 - R0 - D0], [R0], [D0])
+  (dSs, dIs, dRs, dDs) = ([-I0], [I0 - R0 - D0], [R0], [D0]) # evoking the 'star' premise
   for t in range(1, T):
-    dS.append(Ss[t] - Ss[t-1])
-    dI.append(Is[t] - Is[t-1])
-    dR.append(Rs[t] - Rs[t-1])
-    dD.append(Ds[t] - Ds[t-1])
-  changes = {'S': dS, 'I': dI, 'R': dR, 'D': Ds}
+    dSs.append(Ss[t] - Ss[t-1])
+    dIs.append(Is[t] - Is[t-1])
+    dRs.append(Rs[t] - Rs[t-1])
+    dDs.append(Ds[t] - Ds[t-1])
+  changes = {'S': dSs, 'I': dIs, 'R': dRs, 'D': dDs}
 
   sourcepath = [getMountedOn(), 'Task Stage', 'Task - covidsims', 'covidsims', 'results', 'P01', 'C1']
   serialise(timeline, join(*sourcepath, 'timeline'))
