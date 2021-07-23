@@ -15,20 +15,29 @@ ECO_RESOLUTION  = 1E-3   # size of the simulation step (delta t)
 ECO_GRANULARITY = 1E3    # rate at which results are stored (e.g., 1 snapshot each 1K steps)
 ECO_PRECISION   = 1E-6   # minimum difference between two floats required to consider them discernible
 
-def plot(N, Ts, Ss, Is, Rs, Ds):
+def plotSeries(Ts, Ss, Is, Rs, Ds, N, _title = "SIRD model of the epidemic", ylog = False):
 
-  plt.title("SIRD model of the epidemic")
-  plt.plot(Ts, Ss, color=(0,1,0), linewidth=1.0, label='Susceptibles')
-  plt.plot(Ts, Is, color=(1,0,0), linewidth=1.0, label='Infectives')
-  plt.plot(Ts, Rs, color=(0,0,1), linewidth=1.0, label='Recovered')
-  plt.plot(Ts, Ds, color=(0,1,1), linewidth=1.0, label='Deceased')
+  f = lambda L: [val if val > 0 else 1 for val in L]
+
+  plt.title(_title)
+  plt.plot(Ts, f(Ss), color=(0,1,0), linewidth=1.0, label='Susceptibles')
+  plt.plot(Ts, f(Is), color=(1,0,0), linewidth=1.0, label='Infectives')
+  plt.plot(Ts, f(Rs), color=(0,0,1), linewidth=1.0, label='Recovered')
+  plt.plot(Ts, f(Ds), color=(0,1,1), linewidth=1.0, label='Deceased')
 
   plt.xlim(0, math.ceil(max(Ts)))
-  plt.ylim(0, N)
+  if(ylog):
+    plt.ylim(1, N)
+    plt.yscale('log')
+  else:
+    plt.ylim(0, N)
+
   plt.legend()
   plt.xlabel('Days')
   plt.grid(True)
   plt.show()
+
+  return None
 
 def main():
 
@@ -101,7 +110,7 @@ def main():
 
   # plots the results
   print(S, I, R, D, t)
-  plot(N, Ts, Ss, Is, Rs, Ds)
+  plotSeries(Ts, Ss, Is, Rs, Ds, N)
 
   # saves the results for inspection (and use as synthetic series in the inverse)
   T = len(Ts)

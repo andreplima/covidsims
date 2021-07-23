@@ -374,6 +374,9 @@ def loadSourceData(sourcepath, filename, fields, territory, popsizes): #xxx use 
   for date in timeline:
     sourceData.append((territory, date, tmpData[date][ECO_CONFIRMED], tmpData[date][ECO_DECEASED]))
 
+  tsprint('-- {0:8d} cases reported in total.'.format(sum([tmpData[date][ECO_CONFIRMED] for date in timeline])))
+  tsprint('-- {0:8d} death reported in total.'.format(sum([tmpData[date][ECO_DECEASED]  for date in timeline])))
+
   # determines the population residing in the relevant areas of the territory
   N = sum([popsizes[area] for area in set(relevantAreas)])
 

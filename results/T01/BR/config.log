@@ -1,6 +1,6 @@
-[20210722133246] Running essay with specs recovered from [..\configs\T01\BR\preprocess_T01_BR.cfg]
+[20210722232755] Running essay with specs recovered from [..\configs\t01\br\preprocess_T01_BR.cfg]
 
-[20210722133246] Processing essay configuration file [..\configs\T01\BR\preprocess_T01_BR.cfg]
+[20210722232755] Processing essay configuration file [..\configs\t01\br\preprocess_T01_BR.cfg]
 ESSAY_CONFIGID : BR (as <class 'str'>)
 ESSAY_ESSAYID : T01 (as <class 'str'>)
 ESSAY_LABEL : Surveillance data for BR (default settings for a SIRD model) (as <class 'str'>)
@@ -17,15 +17,17 @@ PARAM_SOURCEPATH : ['D:\\', 'Task Stage', 'Task - covidsims', 'covidsims', 'data
 PARAM_TARGETPATH : ['D:\\', 'Task Stage', 'Task - covidsims', 'covidsims', 'results'] (as <class 'list'>)
 PARAM_TERRITORY : ['*, *, *'] (as <class 'list'>)
 
-[20210722133246] Loading raw data
-[20210722133348] -- 513 records have been loaded.
-[20210722133348] -- samples:
-[20210722133348]    (['*, *, *'], datetime.datetime(2020, 2, 25, 0, 0), 2, 0)
-[20210722133348]    (['*, *, *'], datetime.datetime(2021, 7, 21, 0, 0), 56235, 1435)
-[20210722133348] Creating the Book of Life
-[20210722133348] -- 555 records have been created.
-[20210722133348] Playing the Book of Life forward
-[20210722133348] -- 514 records have been created.
-[20210722133348] Saving the results
-[20210722133348] Results and inspection logs were saved in [D:\Task Stage\Task - covidsims\covidsims\results\T01\BR]
-[20210722133348] Finished essay with specs recovered from [..\configs\T01\BR\preprocess_T01_BR.cfg]
+[20210722232755] Loading raw data
+[20210722232910] -- 38696967 cases reported in total.
+[20210722232910] -- 1084487 death reported in total.
+[20210722232911] -- 513 records have been loaded.
+[20210722232911] -- samples:
+[20210722232911]    (['*, *, *'], datetime.datetime(2020, 2, 25, 0, 0), 2, 0)
+[20210722232911]    (['*, *, *'], datetime.datetime(2021, 7, 21, 0, 0), 56235, 1435)
+[20210722232911] Creating the Book of Life
+[20210722232911] -- 555 records have been created.
+[20210722232911] Playing the Book of Life forward
+[20210722232911] -- 514 records have been created.
+[20210722232911] Saving the results
+[20210722233033] Results and inspection logs were saved in [D:\Task Stage\Task - covidsims\covidsims\results\T01\BR]
+[20210722233033] Finished essay with specs recovered from [..\configs\t01\br\preprocess_T01_BR.cfg]

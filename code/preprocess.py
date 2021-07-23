@@ -33,9 +33,12 @@ from os.path    import join, isfile, isdir, exists
 from random     import seed
 
 from sharedDefs import ECO_SEED
+from sharedDefs import ECO_SUSCEPTIBLE, ECO_INFECTIOUS, ECO_RECOVERED, ECO_DECEASED, ECO_CONFIRMED
 from sharedDefs import setupEssayConfig, getEssayParameter, setEssayParameter, overrideEssayParameter
 from sharedDefs import getMountedOn, serialise, saveAsText, stimestamp, tsprint, saveLog
 from sharedDefs import loadSourceData, createTimeline, createBoL, bol2content, dict2text, playBoL
+from inverse    import reformat
+from SIRD       import plotSeries
 
 def main(configFile):
 
@@ -134,6 +137,15 @@ def main(configFile):
   saveAsText(dict2text(roulette, ['Pocket', 'Days']),                       join(*param_targetpath, 'roulette.csv'))
   saveAsText(bol2content(param_territory, bol,  N, timeline, date2t, True), join(*param_targetpath, 'daily_changes.csv'))
   saveAsText(bol2content(param_territory, data, N, timeline, date2t),       join(*param_targetpath, 'surveillance.csv'))
+
+  # plots the results
+  reports = reformat(data, timeline) # daily reported values of the SIRD variables (reports[seriesType] = [val, ...])
+  T = len(timeline)
+  S = reports[ECO_SUSCEPTIBLE]
+  I = reports[ECO_INFECTIOUS]
+  R = reports[ECO_RECOVERED]
+  D = reports[ECO_DECEASED]
+  plotSeries(range(T), S, I, R, D, N, "SIRD series from surveillance data", ylog = True)
 
   #---------------------------------------------------------------------------------------------
   # That's it!

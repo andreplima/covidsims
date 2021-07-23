@@ -1,4 +1,7 @@
+import math
 import numpy as np
+import matplotlib.pyplot as plt
+plt.rcParams['text.usetex'] = True
 
 from os          import makedirs
 from os.path     import join, exists
@@ -7,6 +10,7 @@ from sharedDefs  import getMountedOn, deserialise, saveAsText
 from sharedDefs  import ECO_PRECISION
 from sharedDefs  import ECO_SUSCEPTIBLE, ECO_INFECTIOUS, ECO_RECOVERED, ECO_DECEASED, ECO_CONFIRMED
 from sharedDefs  import mse
+from SIRD        import plotSeries
 
 ECO_SERIESTYPES = [ECO_SUSCEPTIBLE, ECO_INFECTIOUS, ECO_RECOVERED, ECO_DECEASED]
 
@@ -60,11 +64,41 @@ def saveSeries(timeline, reports, changes, S, I, R, D, dS, dI, dR, dD, N, gamma,
 
   return '\n'.join(content)
 
+
+  plt.title("SIRD model of the epidemic - reconstructed")
+  plt.plot(Ts, Ss, color=(0,1,0), linewidth=1.0, label='Susceptibles')
+  plt.plot(Ts, Is, color=(1,0,0), linewidth=1.0, label='Infectives')
+  plt.plot(Ts, Rs, color=(0,0,1), linewidth=1.0, label='Recovered')
+  plt.plot(Ts, Ds, color=(0,1,1), linewidth=1.0, label='Deceased')
+
+  plt.xlim(0, math.ceil(max(Ts)))
+  plt.ylim(0, N)
+  plt.legend()
+  plt.xlabel('Days')
+  plt.grid(True)
+  plt.show()
+
+def plotParams(Ts, beta, gamma_r, gamma_d):
+
+  plt.title("SIRD parameters estimated from surveillance data")
+  plt.plot(Ts, beta,     color=(1.0, 0.0, 0.5), linewidth=1.0, label=r'$\hat{\beta}(t)$')
+  plt.plot(Ts, gamma_r,  color=(1.0, 0.5, 0.0), linewidth=1.0, label=r'$\hat{\gamma}_r(t)$')
+  plt.plot(Ts, gamma_d,  color=(1.0, 0.5, 0.5), linewidth=1.0, label=r'$\hat{\gamma}_d(t)$')
+
+  plt.xlim(0, math.ceil(max(Ts)))
+  plt.ylim(0, 1.05 * max(beta + gamma_r + gamma_d))
+  plt.legend()
+  plt.xlabel('Days')
+  plt.grid(True)
+  plt.show()
+
+  return None
+
 def loadRealData():
 
   print('Loading real surveillance data of COVID-19')
   # recovers the preprocessed time series for COVID-19 download from Brasil-io
-  sourcepath = [getMountedOn(), 'Task Stage', 'Task - covidsims', 'covidsims', 'results', 'T01', 'BR']
+  sourcepath = [getMountedOn(), 'Task Stage', 'Task - covidsims', 'covidsims', 'results', 'T01', 'SP']
   data = deserialise(join(*sourcepath, 'data')) # data[date][seriesType] = int (accumulated)
   bol  = deserialise(join(*sourcepath, 'bol'))  # bol[date][seriesType]  = int (changes)
   timeline = deserialise(join(*sourcepath, 'timeline')) # timeline ~ [date, ...] sorted
@@ -88,7 +122,7 @@ def loadSimulatedData():
 def main():
 
   # recovers preprocessed time series
-  (timeline, reports, changes, sourcepath) =  loadSimulatedData()
+  (timeline, reports, changes, sourcepath) =  loadRealData()
   T = len(timeline)
 
   # obtains estimates for rate parameters of the SIRD model
@@ -143,6 +177,10 @@ def main():
                         gamma, gamma_r, gamma_d, beta),
                         join(*sourcepath, filename))
 
+  # plots the results
+  plotParams(range(T), beta, gamma_r, gamma_d)
+  plotSeries(range(T), S, I, R, D, N, "SIRD model of the epidemic - reconstructed", ylog=True)
+
   # run some sanity/quality checks
   print()
 
@@ -170,4 +208,4 @@ def main():
 
 if __name__ == "__main__":
 
-  main()
+  main()

@@ -32,8 +32,8 @@ def main():
   N = 10000      # the size of the population
   I = 10         # the initial number of infective individuals
   R = 0          # the initial number of removed individuals (i.e., recovered and deceased)
-  beta  = 0.5    # rate of transmission
-  gamma = 0.2    # rate of removal
+  beta  = 0.07   # rate of transmission
+  gamma = 0.03   # rate of removal
 
   # initialises the time series that describe the dynamics of the epidemic
   Ts = [ ]
