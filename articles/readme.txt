@@ -1,0 +1,11 @@
+Articles in this folder are organised as follows:
+
+Folder "01 Mathematical models of epidemics": Articles about mathematical models of epidemics (MME), approaching the subject with distinct depths (basic and advanced).
+
+Folder "02 Epidemiology of COVID19 - looking back": Articles about the epidemiology of COVID-19 that focus on a retrospective analysis, such as estimating parameters of epidemiological models from the then-available surveillance data (e.g., distribution of outcomes per age and gender, contact rate, incubation time, transmission rate, severity, time to recovery, mortality rate, etc.), as well as pointing out possible failures in the obtained estimatives (e.g., excess mortality suggests that the number of deaths by COVID-19 has been grossly under-reported in the surveillance data in Brazil -- thus, estimated parameters must be grossly inaccurate). Also, there are articles concerning the "notion of waves" and "when will it be over". They somehow raise a question related to the "epidemic vs endemic infection disease" distinction: when does an epidemic disease becomes endemic? (see also "MME - advanced" in Folder 01 for the distinction between epidemic and endemic models of infectious diseases).
+
+Folder "03 Epidemiology of COVID19 - looking forward": Articles about the epidemiology of COVID-19 (and other diseases) that focus on a prospective (or counterfactual) analysis. Some articles describe computational methods to forecast public health outcomes (i.e., methods to predict and assess the quality of produced predictions, see folders 01 and 02), such the number of deaths or recovered individuals. Other articles aim the same objective, but they abandon the compartmental models (e.g., SIR-family models) in favour of simulational models (e.g., the model developed by Neil Ferguson and his team at the Imperial College London, which informed policy making in UK and other territories; see folder 03). The latter models are also used to estimate the effectiveness of diverse interventions.
+
+Folder "99 Relevant technical aspects of computational methods": Articles about technical details in numerical computation that are relevant to the computational methods employed.
+
+
